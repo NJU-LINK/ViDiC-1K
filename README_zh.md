@@ -49,16 +49,8 @@
 - **数据来源**: 筛选自 8 个以上的公共数据集 (如 VidDiffBench, LMArena) 以及自生成的合成数据 (Veo3 + 帧拼接)。
 
 ## 📰 最新动态
-- 🤗 ViDiC-1K 数据集在 Hugging Face 上线。
+- 🤗 ViDiC-1K 数据集已经在 Hugging Face 上线。
 - 🚀 评估代码和排行榜已发布。
-
-## 🚀 快速开始
-
-### 🤗 下载数据集
-```bash
-# 使用 huggingface-cli
-hf download YourOrg/ViDiC-1K --local-dir ./data/ViDiC-1K --include-pattern "*.mp4"
-```
 
 ## 📂 文件结构
 ```
