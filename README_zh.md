@@ -49,31 +49,16 @@
 - **数据来源**: 筛选自 8 个以上的公共数据集 (如 VidDiffBench, LMArena) 以及自生成的合成数据 (Veo3 + 帧拼接)。
 
 ## 📰 最新动态
-- **[即将发布]** 🤗 ViDiC-1K 数据集即将在 Hugging Face 上线。
-- **[即将发布]** 🚀 评估代码和排行榜即将发布。
+- 🤗 ViDiC-1K 数据集在 Hugging Face 上线。
+- 🚀 评估代码和排行榜已发布。
 
 ## 🚀 快速开始
-
-### 安装
-
-```bash
-git clone https://github.com/YourOrg/ViDiC.git
-cd ViDiC
-pip install -r requirements.txt
-```
 
 ### 🤗 下载数据集
 ```bash
 # 使用 huggingface-cli
 hf download YourOrg/ViDiC-1K --local-dir ./data/ViDiC-1K --include-pattern "*.mp4"
 ```
-
-### 评估
-我们提供了使用 LLM-as-a-Judge 协议运行双重清单评估的脚本。
-
-```bash
-
-```bash
 
 ## 📂 文件结构
 ```
