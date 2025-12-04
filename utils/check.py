@@ -52,5 +52,5 @@ def check_checklist(json_path):
         print("All Differences answers are 'yes'")
 
 if __name__ == "__main__":
-    json_file = r"C:\Users\wjt11\Desktop\ViDiC\ViDiC-1K\checklist\checklist_final.json"
+    json_file = r""
     check_checklist(json_file)
