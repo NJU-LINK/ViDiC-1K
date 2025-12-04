@@ -78,20 +78,31 @@ hf download YourOrg/ViDiC-1K --local-dir ./data/ViDiC-1K --include-pattern "*.mp
 ## 📂 文件结构
 ```
 ViDiC/
-├── data/           # 视频文件和标注
-│   ├── videos/           
-│   └── annotations/
-│       ├── vidic_1k_checklists.json  # 真值问答对
-│       └── video_meta.json
-├── evaluation/     # 评估脚本
-│   ├── judge_prompts/      # LLM 裁判的提示词
-│   └── metric_calc.py      
-├── inference/      # 热门模型的推理脚本
-│   ├── qwen_vl.py       
-│   ├── gpt4o.py
-│   └── ...
-├── assets/         # README 图片资源
-└── main_results.py # 复现论文表格的脚本
+├── assets/ # Images for README
+│   ├── page.png
+│   └── stats.png
+│
+├── checklist/  # The annotion file
+│   └── checklist.json
+│
+├── data/   # Video files  Get from the hugging face
+│   └── LMArena
+|   └── style
+|   └── ......
+|
+├── inference/   # Inference scripts for popular models
+│   ├── get_response_GLM.py
+│   ├── get_response_gemini.py
+│
+├── prompt/
+│   ├── prompt_get_response.txt
+│   └── prompt_judge.txt
+│
+├── response/
+│   └── example_response.json
+│
+└── utils/
+    └── calculate.py
 ```
 
 ## 📊 基准测试结果

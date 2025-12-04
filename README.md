@@ -79,20 +79,31 @@ We provide scripts to run the Dual-Checklist evaluation using the LLM-as-a-Judge
 
 ```
 ViDiC/
-├── data/           # Video files and annotations
-│   ├── videos/           
-│   └── annotations/
-│       ├── vidic_1k_checklists.json  # Ground truth Q&A
-│       └── video_meta.json
-├── evaluation/     # Evaluation scripts
-│   ├── judge_prompts/      # Prompts for LLM judge
-│   └── metric_calc.py      
-├── inference/      # Inference scripts for popular models
-│   ├── qwen_vl.py       
-│   ├── gpt4o.py
-│   └── ...
-├── assets/         # Images for README
-└── main_results.py # Script to reproduce paper tables
+├── assets/ # Images for README
+│   ├── page.png
+│   └── stats.png
+│
+├── checklist/  # The annotion file
+│   └── checklist.json
+│
+├── data/   # Video files  Get from the hugging face
+│   └── LMArena
+|   └── style
+|   └── ......
+|
+├── inference/   # Inference scripts for popular models
+│   ├── get_response_GLM.py
+│   ├── get_response_gemini.py
+│
+├── prompt/
+│   ├── prompt_get_response.txt
+│   └── prompt_judge.txt
+│
+├── response/
+│   └── example_response.json
+│
+└── utils/
+    └── calculate.py
 ```
 
 ## 📊 Benchmark Results
