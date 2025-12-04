@@ -1,7 +1,3 @@
-"""
-视频帧提取对比分析工具 - GLM-4.1V-Thinking 本地版本（显存优化）
-"""
-
 import os
 import json
 import sys
@@ -19,7 +15,7 @@ import gc
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-# 设置环境变量优化显存
+# Set environment variables to optimize VRAM
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 log_dir = "logs"
@@ -83,18 +79,18 @@ class VideoProcessor:
             if directory and not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
   
-        # 清理显存
+        # Clear VRAM
         torch.cuda.empty_cache()
         gc.collect()
   
-        # 初始化GLM-4V模型
-        logger.info("正在加载 GLM-4.1V-Thinking 模型...")
+        # Initialize GLM-4V model
+        logger.info("Loading GLM-4.1V-Thinking model...")
         self.processor = AutoProcessor.from_pretrained(
             self.model_path, 
             trust_remote_code=True
         )
         
-        # 定义GLM的特殊tokens（假设Thinking模型使用<thinking>等标签，根据实际模型调整）
+        # Define GLM special tokens (adjust according to actual model, assuming Thinking model uses <thinking> tags)
         self.special_tokens = {
             "think_start": self.processor.tokenizer.convert_tokens_to_ids("<thinking>"),
             "think_end": self.processor.tokenizer.convert_tokens_to_ids("</thinking>"),
@@ -104,24 +100,24 @@ class VideoProcessor:
         
         self.model = Glm4vForConditionalGeneration.from_pretrained(
             pretrained_model_name_or_path=self.model_path,
-            torch_dtype=torch.bfloat16, # 使用bfloat16以获得更好性能
+            torch_dtype=torch.bfloat16,  # Use bfloat16 for better performance
             device_map="auto",
             trust_remote_code=True
-            # 根据用户要求，已移除 attn_implementation="flash_attention_2"
+            # Removed attn_implementation="flash_attention_2" as per user request
         )
         self.model.eval()
   
-        logger.info("✅ GLM-4.1V-Thinking 模型加载完成")
+        logger.info("✅ GLM-4.1V-Thinking model loaded successfully")
   
-        # 显示显存使用情况
+        # Display VRAM usage
         if torch.cuda.is_available():
             for i in range(torch.cuda.device_count()):
                 allocated = torch.cuda.memory_allocated(i) / 1024**3
                 reserved = torch.cuda.memory_reserved(i) / 1024**3
-                logger.info(f"GPU {i}: 已分配 {allocated:.2f}GB, 已保留 {reserved:.2f}GB")
+                logger.info(f"GPU {i}: Allocated {allocated:.2f}GB, Reserved {reserved:.2f}GB")
   
         logger.info(f"="*80)
-        logger.info(f"配置: Model=GLM-4.1V-Thinking, FPS={1/self.frame_interval_seconds:.1f}, MaxFrames={self.max_frames_per_video}")
+        logger.info(f"Config: Model=GLM-4.1V-Thinking, FPS={1/self.frame_interval_seconds:.1f}, MaxFrames={self.max_frames_per_video}")
         logger.info(f"="*80)
   
         self.successful = 0
@@ -135,14 +131,14 @@ class VideoProcessor:
         self._initialize_output_file()
 
     def extract_frames_from_video(self, video_path, video_label=""):
-        """提取视频帧并保存到磁盘，返回帧路径列表"""
+        """Extract video frames and save to disk, return list of frame paths"""
         frame_paths = []
         cap = None
   
         try:
             cap = cv2.VideoCapture(video_path)
             if not cap.isOpened():
-                raise ValueError(f"无法打开: {video_path}")
+                raise ValueError(f"Cannot open: {video_path}")
       
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
@@ -150,9 +146,9 @@ class VideoProcessor:
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
       
-            logger.info(f"视频: {os.path.basename(video_path)} - {total_frames}帧, {fps:.1f}fps, {duration:.1f}s")
+            logger.info(f"Video: {os.path.basename(video_path)} - {total_frames} frames, {fps:.1f}fps, {duration:.1f}s")
       
-            # 计算需要提取的帧索引
+            # Calculate frame indices to extract
             frame_indices = []
             current_time = 0
             while current_time < duration:
@@ -166,7 +162,7 @@ class VideoProcessor:
             if len(frame_indices) > self.max_frames_per_video:
                 frame_indices = frame_indices[:self.max_frames_per_video]
       
-            logger.info(f"提取 {len(frame_indices)} 帧")
+            logger.info(f"Extracting {len(frame_indices)} frames")
       
             video_name = os.path.splitext(os.path.basename(video_path))[0]
             video_frame_dir = os.path.join(self.temp_frame_dir, f"{video_name}_{video_label}")
@@ -193,17 +189,17 @@ class VideoProcessor:
                 frame_paths.append(frame_filepath)
       
             cap.release()
-            logger.info(f"✅ 提取完成: {len(frame_paths)}帧保存至 {video_frame_dir}")
+            logger.info(f"✅ Extraction complete: {len(frame_paths)} frames saved to {video_frame_dir}")
             return frame_paths
       
         except Exception as e:
-            logger.error(f"❌ 提取失败: {e}")
+            logger.error(f"❌ Extraction failed: {e}")
             if cap:
                 cap.release()
             raise
 
     def cleanup_temp_frames(self, frame_paths):
-        """清理临时帧文件"""
+        """Clean up temporary frame files"""
         for path in frame_paths:
             try:
                 if os.path.exists(path):
@@ -220,22 +216,22 @@ class VideoProcessor:
                 pass
 
     def process_with_glm(self, frame_paths_video1, frame_paths_video2):
-        """使用 GLM-4V 模型处理视频帧（带强制完成逻辑）"""
+        """Process video frames using GLM-4V model (with forced completion logic)"""
         torch.cuda.empty_cache()
         gc.collect()
 
         try:
-            # 加载图像
+            # Load images
             loaded_images_v1 = [Image.open(p).convert("RGB") for p in frame_paths_video1 if os.path.exists(p)]
             loaded_images_v2 = [Image.open(p).convert("RGB") for p in frame_paths_video2 if os.path.exists(p)]
             all_loaded_images = loaded_images_v1 + loaded_images_v2
         
-            logger.info(f'加载了 {len(all_loaded_images)} 帧用于处理')
+            logger.info(f'Loaded {len(all_loaded_images)} frames for processing')
 
-            # 构建符合 transformers 库多模态格式的 content 列表
+            # Build content list in transformers multimodal format
             content_list = []
 
-            # 1. 添加系统提示和视频1的描述文本
+            # 1. Add system prompt and video1 description text
             content_list.append({
                 "type": "text",
                 "text": (
@@ -244,21 +240,21 @@ class VideoProcessor:
                 )
             })
 
-            # 2. 为视频1的每一帧添加一个图片占位符
+            # 2. Add image placeholder for each frame in video1
             for _ in loaded_images_v1:
                 content_list.append({"type": "image"})
 
-            # 3. 添加视频2的描述文本
+            # 3. Add video2 description text
             content_list.append({
                 "type": "text",
                 "text": f"\n\nDestination video ({len(loaded_images_v2)} frames are provided):"
             })
 
-            # 4. 为视频2的每一帧添加一个图片占位符
+            # 4. Add image placeholder for each frame in video2
             for _ in loaded_images_v2:
                 content_list.append({"type": "image"})
 
-            # 构建最终的 messages 结构
+            # Build final messages structure
             messages = [
                 {
                     "role": "user",
@@ -266,7 +262,7 @@ class VideoProcessor:
                 }
             ]
         
-            # 调用带强制补全逻辑的生成函数
+            # Call generation function with forced completion logic
             with torch.no_grad():
                 result_dict = self.generate_with_force_completion(
                     messages=messages,
@@ -275,7 +271,7 @@ class VideoProcessor:
         
             response = result_dict.get("output_text", "")
 
-            # 释放显存
+            # Release VRAM
             del all_loaded_images, loaded_images_v1, loaded_images_v2
             torch.cuda.empty_cache()
             gc.collect()
@@ -289,27 +285,27 @@ class VideoProcessor:
 
     def generate_with_force_completion(self, messages, images):
         """
-        GLM-4V的 robust inference 实现，确保输出完整性。
+        GLM-4V robust inference implementation to ensure output completeness.
         """
-        # 1. 使用 apply_chat_template 生成带占位符的提示文本
+        # 1. Use apply_chat_template to generate prompt text with placeholders
         prompt_text = self.processor.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
 
-        # 2. 使用 processor 处理提示文本和图像
+        # 2. Use processor to handle prompt text and images
         inputs = self.processor(
             text=prompt_text,
             images=images,
             return_tensors="pt",
-            padding=False  # 单样本，无需填充
+            padding=False  # Single sample, no padding needed
         ).to(self.model.device)
         
         inputs.pop("token_type_ids", None)
         input_length = inputs["input_ids"].shape[1]
 
-        # 第一轮生成
+        # First round generation
         with torch.no_grad():
             first_generated_ids = self.model.generate(
                 **inputs,
@@ -413,10 +409,10 @@ class VideoProcessor:
         video1_path = entry['video1_path']
         video2_path = entry['video2_path']
   
-        logger.info(f"\n[Entry {index}] 开始处理")
+        logger.info(f"\n[Entry {index}] Starting processing")
   
         if index in self.processed_indices:
-            logger.info(f"[Entry {index}] 已处理，跳过")
+            logger.info(f"[Entry {index}] Already processed, skipping")
             self.skipped_processed += 1
             return None
   
@@ -432,24 +428,24 @@ class VideoProcessor:
           
                 for video_path in [video1_path, video2_path]:
                     if not os.path.exists(video_path):
-                        raise FileNotFoundError(f"不存在: {video_path}")
+                        raise FileNotFoundError(f"Does not exist: {video_path}")
           
-                logger.info(f"[Entry {index}] 提取视频1帧...")
+                logger.info(f"[Entry {index}] Extracting video1 frames...")
                 frame_paths_video1 = self.extract_frames_from_video(video1_path, "source")
           
-                logger.info(f"[Entry {index}] 提取视频2帧...")
+                logger.info(f"[Entry {index}] Extracting video2 frames...")
                 frame_paths_video2 = self.extract_frames_from_video(video2_path, "destination")
           
                 if torch.cuda.is_available():
                     allocated = torch.cuda.memory_allocated(0) / 1024**3
-                    logger.info(f"推理前显存使用: {allocated:.2f}GB")
+                    logger.info(f"VRAM usage before inference: {allocated:.2f}GB")
           
                 with model_lock:
-                    logger.info(f"[Entry {index}] 调用 GLM-4V 模型...")
+                    logger.info(f"[Entry {index}] Calling GLM-4V model...")
                     start_time = time.time()
                     response_content = self.process_with_glm(frame_paths_video1, frame_paths_video2)
                     inference_time = time.time() - start_time
-                    logger.info(f"[Entry {index}] 推理耗时: {inference_time:.2f}秒")
+                    logger.info(f"[Entry {index}] Inference time: {inference_time:.2f}s")
                     time.sleep(self.model_delay)
           
                 self.cleanup_temp_frames(frame_paths_video1)
@@ -471,19 +467,19 @@ class VideoProcessor:
                 self._append_result_to_file(result)
                 self._save_checkpoint(index, success=True)
                 self.successful += 1
-                logger.info(f"[Entry {index}] ✅ 成功")
+                logger.info(f"[Entry {index}] ✅ Success")
                 return result
           
             except torch.cuda.OutOfMemoryError as e:
                 last_error = e
                 retry_count += 1
-                logger.error(f"[Entry {index}] ❌ 显存不足，尝试{retry_count}次")
+                logger.error(f"[Entry {index}] ❌ Out of VRAM, attempt {retry_count}")
                 self.cleanup_temp_frames(frame_paths_video1)
                 self.cleanup_temp_frames(frame_paths_video2)
                 torch.cuda.empty_cache()
                 gc.collect()
                 if retry_count < self.max_retries:
-                    logger.info(f"等待{retry_count * 5}秒后重试...")
+                    logger.info(f"Waiting {retry_count * 5}s before retry...")
                     time.sleep(retry_count * 5)
               
             except Exception as e:
@@ -491,7 +487,7 @@ class VideoProcessor:
                 retry_count += 1
                 self.cleanup_temp_frames(frame_paths_video1)
                 self.cleanup_temp_frames(frame_paths_video2)
-                logger.error(f"[Entry {index}] ❌ 尝试{retry_count}失败: {e}")
+                logger.error(f"[Entry {index}] ❌ Attempt {retry_count} failed: {e}")
                 traceback.print_exc()
                 torch.cuda.empty_cache()
                 gc.collect()
@@ -516,7 +512,7 @@ class VideoProcessor:
                 with open(self.output_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if isinstance(data, list):
-                        logger.info(f"输出文件已存在: {len(data)}条")
+                        logger.info(f"Output file exists: {len(data)} entries")
                         return
             except:
                 pass
@@ -534,7 +530,7 @@ class VideoProcessor:
                 with open(self.output_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
             except Exception as e:
-                logger.error(f"写入失败: {e}")
+                logger.error(f"Write failed: {e}")
 
     def _append_error_to_file(self, error_info):
         with file_lock:
@@ -548,7 +544,7 @@ class VideoProcessor:
                 with open(self.error_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
             except Exception as e:
-                logger.error(f"写入错误文件失败: {e}")
+                logger.error(f"Failed to write error file: {e}")
 
     def _load_checkpoint(self):
         if self.resume_from_checkpoint and os.path.exists(self.checkpoint_file):
@@ -556,7 +552,7 @@ class VideoProcessor:
                 with open(self.checkpoint_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except:
-                logger.warning("加载检查点失败，使用空数据")
+                logger.warning("Failed to load checkpoint, using empty data")
         return {"successful_indices": []}
 
     def _save_checkpoint(self, index, success):
@@ -572,18 +568,18 @@ class VideoProcessor:
             with open(prompt_path, 'r', encoding='utf-8') as f:
                 return f.read().strip()
         else:
-            default_prompt = "请对比分析这两个视频的差异，详细描述它们在内容、风格、质量等方面的不同。"
-            logger.warning(f"提示文件不存在，使用默认: {default_prompt}")
+            default_prompt = "Please compare and analyze the differences between these two videos, describing in detail their differences in content, style, quality, etc."
+            logger.warning(f"Prompt file does not exist, using default: {default_prompt}")
             return default_prompt
 
     def process_batch(self):
         logger.info("\n" + "="*80)
-        logger.info("开始批量处理 (GLM-4.1V-Thinking - 显存优化版)")
+        logger.info("Starting batch processing (GLM-4.1V-Thinking - VRAM optimized version)")
         logger.info("="*80)
 
-        # 加载输入数据
+        # Load input data
         if not os.path.exists(self.input_json_file):
-            logger.error(f"输入文件不存在: {self.input_json_file}")
+            logger.error(f"Input file does not exist: {self.input_json_file}")
             return
 
         with open(self.input_json_file, 'r', encoding='utf-8') as f:
@@ -592,7 +588,7 @@ class VideoProcessor:
         if self.max_pairs:
             entries = entries[:self.max_pairs]
 
-        logger.info(f"共 {len(entries)} 对视频")
+        logger.info(f"Total {len(entries)} video pairs")
 
         self.start_time = time.time()
         self.total_pairs = len(entries)
@@ -604,28 +600,28 @@ class VideoProcessor:
                 try:
                     future.result(timeout=self.timeout)
                 except TimeoutError:
-                    logger.error("处理超时")
+                    logger.error("Processing timeout")
                 except Exception as e:
-                    logger.error(f"异常: {e}")
+                    logger.error(f"Exception: {e}")
 
         elapsed = time.time() - self.start_time
         logger.info("="*80)
-        logger.info(f"处理完成: 成功 {self.successful}, 失败 {self.failed}, 跳过 {self.skipped_processed}")
-        logger.info(f"总耗时: {elapsed:.2f}秒")
+        logger.info(f"Processing complete: Successful {self.successful}, Failed {self.failed}, Skipped {self.skipped_processed}")
+        logger.info(f"Total time: {elapsed:.2f}s")
 
 
 if __name__ == "__main__":
-    # 示例配置（根据需要调整）
+    # Example configuration (adjust as needed)
     config = {
-        "input_json_file": "/root/bayes-tmp/workplace/checklist.json",  # 包含视频对的JSON文件，格式: [{"index": 0, "video1_path": "...", "video2_path": "..."}, ...]
+        "input_json_file": "input_videos.json",  # JSON file containing video pairs, format: [{"index": 0, "video1_path": "...", "video2_path": "..."}, ...]
         "output_file": "video_analysis_results_glm.json",
         "error_file": "video_analysis_errors_glm.json",
         "checkpoint_file": "processing_checkpoint.json",
-        "max_workers": 1,  # 并发处理数量（受显存限制，通常为1）
-        "max_pairs": None,  # 处理的最大视频对数，None为全部
-        "model_path": "/root/bayes-tmp/workplace/model/GLM",  # 模型路径
-        "frame_interval_seconds": 1.0,  # 帧提取间隔
-        "max_frames_per_video": 8,  # 每视频最大帧数
+        "max_workers": 1,  # Number of concurrent processes (limited by VRAM, usually 1)
+        "max_pairs": None,  # Maximum number of video pairs to process, None for all
+        "model_path": "THUDM/GLM-4.1V-9B-Thinking",  # Model path
+        "frame_interval_seconds": 1.0,  # Frame extraction interval
+        "max_frames_per_video": 8,  # Maximum frames per video
         "first_max_tokens": 4096,
         "force_max_tokens": 4096,
         "temperature": 0.2,

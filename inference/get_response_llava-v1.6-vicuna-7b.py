@@ -14,35 +14,33 @@ from torchvision.transforms.functional import InterpolationMode
 from tqdm import tqdm
 from threading import Lock
 import numpy as np
+import re
 
-# LLaVA相关导入
+# LLaVA-specific imports
 from llava.model.builder import load_pretrained_model
 from llava.mm_utils import get_model_name_from_path
 from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
-from llava.conversation import conv_templates, SeparatorStyle
+from llava.conversation import conv_templates
 from llava.mm_utils import tokenizer_image_token, process_images
 from llava.utils import disable_torch_init
-import re
 
-# 固定的文件夹路径配置
-MODEL_FOLDER = ""
-OUTPUT_FOLDER = "response"
-LOG_FOLDER = "logs"
-
+# --- Constants ---
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+# --- Utility Functions for Image/Video Processing ---
+
 def build_transform(input_size):
-    MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
-    transform = T.Compose([
+    """Builds the image transformation pipeline."""
+    return T.Compose([
         T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
         T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
         T.ToTensor(),
-        T.Normalize(mean=MEAN, std=STD)
+        T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
     ])
-    return transform
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
+    """Finds the best grid-like aspect ratio for image patching."""
     best_ratio_diff = float('inf')
     best_ratio = (1, 1)
     area = width * height
@@ -57,17 +55,20 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
                 best_ratio = ratio
     return best_ratio
 
-def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbnail=False):
+def dynamic_preprocess(image, min_patches=1, max_patches=12, image_size=448, use_thumbnail=False):
+    """Dynamically preprocesses an image by splitting it into patches."""
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
 
     target_ratios = set(
-        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
-        i * j <= max_num and i * j >= min_num)
+        (i, j) for n in range(min_patches, max_patches + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
+        i * j <= max_patches and i * j >= min_patches
+    )
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, target_ratios, orig_width, orig_height, image_size)
+        aspect_ratio, target_ratios, orig_width, orig_height, image_size
+    )
 
     target_width = image_size * target_aspect_ratio[0]
     target_height = image_size * target_aspect_ratio[1]
@@ -77,180 +78,153 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
     processed_images = []
     for i in range(blocks):
         box = (
-            (i % (target_width // image_size)) * image_size,
-            (i // (target_width // image_size)) * image_size,
-            ((i % (target_width // image_size)) + 1) * image_size,
-            ((i // (target_width // image_size)) + 1) * image_size
+            (i % target_aspect_ratio[0]) * image_size,
+            (i // target_aspect_ratio[0]) * image_size,
+            ((i % target_aspect_ratio[0]) + 1) * image_size,
+            ((i // target_aspect_ratio[0]) + 1) * image_size
         )
         split_img = resized_img.crop(box)
         processed_images.append(split_img)
+
     assert len(processed_images) == blocks
     if use_thumbnail and len(processed_images) != 1:
         thumbnail_img = image.resize((image_size, image_size))
         processed_images.append(thumbnail_img)
     return processed_images
 
-def get_index(bound, fps, max_frame, first_idx=0, num_segments=32):
+def get_frame_indices(total_frames, fps, num_segments=32, bound=None):
+    """Calculates indices for frame sampling from a video."""
     if bound:
-        start, end = bound[0], bound[1]
+        start, end = bound
+        start_idx = max(0, round(start * fps))
+        end_idx = min(total_frames, round(end * fps))
     else:
-        start, end = -100000, 100000
-    start_idx = max(first_idx, round(start * fps))
-    end_idx = min(round(end * fps), max_frame)
+        start_idx, end_idx = 0, total_frames
+
     seg_size = float(end_idx - start_idx) / num_segments
     frame_indices = np.array([
         int(start_idx + (seg_size / 2) + np.round(seg_size * idx))
         for idx in range(num_segments)
     ])
-    return frame_indices
+    return np.clip(frame_indices, start_idx, end_idx - 1).astype(int)
 
-def process_video_to_image_list(video_path, bound=None, input_size=448, max_num=1, num_segments=32):
-    """处理视频并返回图像对象列表"""
+def process_video_to_image_list(video_path, input_size=448, max_patches=1, num_segments=32):
+    """Processes a video file and returns a list of PIL Image objects."""
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
-    max_frame = len(vr) - 1
-    fps = float(vr.get_avg_fps())
-    frame_indices = get_index(bound, fps, max_frame, first_idx=0, num_segments=num_segments)
+    total_frames = len(vr)
+    fps = vr.get_avg_fps()
+    frame_indices = get_frame_indices(total_frames, fps, num_segments=num_segments)
     
     image_list = []
     for frame_index in frame_indices:
         frame = vr[frame_index].asnumpy()
         pil_image = Image.fromarray(frame).convert('RGB')
         processed_images = dynamic_preprocess(
-            pil_image, 
-            image_size=input_size,
-            use_thumbnail=True,
-            max_num=max_num
+            pil_image, image_size=input_size, use_thumbnail=True, max_patches=max_patches
         )
         image_list.extend(processed_images)
-    return image_list 
+    return image_list
 
 
 class LLaVAProcessor:
-    """LLaVA 视频对比处理主类"""
+    """Main class for video comparison using LLaVA."""
     
-    # 添加类级别的文件锁
     _output_file_lock = Lock()
     
     def __init__(self, config):
-        """初始化处理器"""
+        """Initializes the processor."""
         disable_torch_init()
         
-        self.model_name = config.get('model_name', 'llava-v1.6-vicuna-7b')
-        self.model_path = config.get('model_path')
-        self.model_path = ''
+        self.model_path = config['model_path']
+        self.model_name = get_model_name_from_path(self.model_path)
+        self.input_json_file = config['input_json_file']
+        self.prompt_file = config['prompt_file']
+        self.output_folder = config['output_folder']
+        self.log_folder = config['log_folder']
+        self.use_thinking_prompt = config['use_thinking_prompt']
+        self.max_frames_per_video = config['max_frames_per_video']
         
-        self.input_json_file = config.get('input_json_file', 'input_videos.json')
-        self.prompt_file = config.get('prompt_file', 'prompt_generate.txt')
-        self.thinking = config.get('thinking', False)
-        self.max_frames_per_video = config.get('max_frames_per_video', 32)
+        # Set output file path based on thinking mode
+        os.makedirs(self.output_folder, exist_ok=True)
+        mode_suffix = "thinking" if self.use_thinking_prompt else "no_thinking"
+        self.output_file = os.path.join(self.output_folder, f"{self.model_name}_{mode_suffix}_results.json")
         
-        # 设置输出文件路径
-        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-        if self.thinking:
-            self.output_file = os.path.join(OUTPUT_FOLDER, f"{self.model_name}_thinking_results.json")
-        else:
-            self.output_file = os.path.join(OUTPUT_FOLDER, f"{self.model_name}_nothinking_results.json")
-        
-        # 设置日志
+        # Setup logging
         self._setup_logging()
         
-        # 验证输入文件存在
+        # Validate input files and paths
         if not os.path.exists(self.input_json_file):
-            raise FileNotFoundError(f"输入JSON文件不存在: {self.input_json_file}")
-        
-        # 验证模型路径存在
+            raise FileNotFoundError(f"Input JSON file not found: {self.input_json_file}")
         if not os.path.exists(self.model_path):
-            raise FileNotFoundError(f"模型路径不存在: {self.model_path}")
+            raise FileNotFoundError(f"Model path does not exist: {self.model_path}")
         
-        # 检测 GPU 数量
+        # Check for GPU
+        if not torch.cuda.is_available():
+            self.logger.error("❌ No GPU detected. This script requires GPU support.")
+            raise RuntimeError("A GPU is required to run this script.")
+        
         gpu_count = torch.cuda.device_count()
-        if gpu_count == 0:
-            self.logger.error("❌ 未检测到GPU，此脚本需要GPU支持")
-            raise RuntimeError("需要GPU才能运行此脚本")
-        
-        self.logger.info(f"✅ 检测到 {gpu_count} 个GPU")
-        
-        # 打印GPU信息
+        self.logger.info(f"✅ Detected {gpu_count} GPU(s).")
         for i in range(gpu_count):
             gpu_name = torch.cuda.get_device_name(i)
             gpu_memory = torch.cuda.get_device_properties(i).total_memory / 1024**3
             self.logger.info(f"  GPU {i}: {gpu_name} ({gpu_memory:.2f} GB)")
         
-        # 初始化 LLaVA 模型
-        self.logger.info(f"正在加载 LLaVA 模型: {self.model_path}")
-        self.logger.info(f"启用思考模式: {self.thinking}")
+        # Initialize LLaVA model
+        self.logger.info(f"Loading LLaVA model from: {self.model_path}")
+        self.logger.info(f"Thinking mode enabled: {self.use_thinking_prompt}")
         
         try:
-            self.model_path = "/mnt/shared-storage-user/colab-share/liujiaheng/pjlab-oss/models/Llava/llava-v1.6/llava-v1.6-model"
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path=self.model_path,
-                model_base=None,
-                model_name=get_model_name_from_path(self.model_path)
+                model_path=self.model_path, model_base=None, model_name=self.model_name
             )
             if next(self.model.parameters()).device.type == 'cuda':
-                self.logger.info("✅ LLaVA 模型加载成功 (GPU)")
+                self.logger.info("✅ LLaVA model loaded successfully onto GPU.")
             else:
-                self.logger.warning("⚠️ 模型在CPU上运行，性能可能受影响")
+                self.logger.warning("⚠️ Model is running on CPU, which may be slow.")
         except Exception as e:
-            self.logger.error(f"❌ 模型加载失败: {e}")
+            self.logger.error(f"❌ Failed to load model: {e}")
             raise
         
-        # 视频处理配置
+        # Video and generation settings
         self.input_size = 448
-        self.fps = 1.0
-        self.max_num = 1
+        self.max_patches = 1
         
-        # 生成配置
-        if self.thinking:
-            self.temperature = 0.6
-            self.max_new_tokens = 8192
-        else:
-            self.temperature = 0.1
-            self.max_new_tokens = 2048
+        self.temperature = 0.6 if self.use_thinking_prompt else 0.1
+        self.max_new_tokens = 8192 if self.use_thinking_prompt else 2048
         
-        self.logger.info(f"配置信息:")
-        self.logger.info(f"  - 模型名称: {self.model_name}")
-        self.logger.info(f"  - 模型路径: {self.model_path}")
-        self.logger.info(f"  - 每个视频最大帧数: {self.max_frames_per_video}")
-        self.logger.info(f"  - 输入文件: {self.input_json_file}")
-        self.logger.info(f"  - 输出文件: {self.output_file}")
-        self.logger.info(f"  - 提示词文件: {self.prompt_file}")
-        self.logger.info(f"  - 思考模式: {'启用' if self.thinking else '禁用'}")
-        self.logger.info(f"  - 温度: {self.temperature}")
-        self.logger.info(f"  - 最大生成tokens: {self.max_new_tokens}")
+        self.logger.info("Configuration:")
+        self.logger.info(f"  - Model Name: {self.model_name}")
+        self.logger.info(f"  - Model Path: {self.model_path}")
+        self.logger.info(f"  - Max Frames per Video: {self.max_frames_per_video}")
+        self.logger.info(f"  - Input File: {self.input_json_file}")
+        self.logger.info(f"  - Output File: {self.output_file}")
+        self.logger.info(f"  - Prompt File: {self.prompt_file}")
+        self.logger.info(f"  - Thinking Mode: {'Enabled' if self.use_thinking_prompt else 'Disabled'}")
+        self.logger.info(f"  - Temperature: {self.temperature}")
+        self.logger.info(f"  - Max New Tokens: {self.max_new_tokens}")
         
-        # 统计信息
-        self.successful = 0
-        self.failed = 0
-        self.skipped_processed = 0
+        # Statistics
+        self.successful_count = 0
+        self.failed_count = 0
+        self.skipped_count = 0
         self.start_time = None
         
-        # 从输出文件加载已处理的记录
         self.processed_indices = self._load_processed_indices()
+        self.system_prompt = self._load_prompt_from_file()
         
-        # 提示词
-        self.system_prompt = self._load_system_prompt()
-        
-        # 如果启用思考模式，添加思考提示
-        if self.thinking:
-            R1_SYSTEM_PROMPT = """You are an AI assistant that rigorously follows this response protocol:
-
-1. First, conduct a detailed analysis of the question. Consider different angles, potential solutions, and reason through the problem step-by-step. Enclose this entire thinking process within 
- tags.
-
+        if self.use_thinking_prompt:
+            THINKING_PROMPT_WRAPPER = """You are an AI assistant that rigorously follows this response protocol:
+1. First, conduct a detailed analysis of the question. Consider different angles, potential solutions, and reason through the problem step-by-step. Enclose this entire thinking process within <think> and </think> tags.
 2. After the thinking section, provide a clear, concise, and direct answer to the user's question. Separate the answer from the think section with a newline.
-
-Ensure that the thinking process is thorough but remains focused on the query. The final answer should be standalone and not reference the thinking section.
-
-"""
-            self.system_prompt = R1_SYSTEM_PROMPT + self.system_prompt
+Ensure that the thinking process is thorough but remains focused on the query. The final answer should be standalone and not reference the thinking section.\n\n"""
+            self.system_prompt = THINKING_PROMPT_WRAPPER + self.system_prompt
         
-        # 初始化或加载已有的结果文件
         self._initialize_output_file()
     
     def _setup_logging(self):
-        """设置日志配置"""
-        log_dir = os.path.join(LOG_FOLDER, self.model_name)
+        """Configures logging for the application."""
+        log_dir = os.path.join(self.log_folder, self.model_name)
         os.makedirs(log_dir, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -259,97 +233,67 @@ Ensure that the thinking process is thorough but remains focused on the query. T
         
         self.logger = logging.getLogger(f"LLaVAProcessor_{self.model_name}")
         self.logger.setLevel(logging.INFO)
-        self.logger.handlers.clear()
+        if self.logger.hasHandlers(): self.logger.handlers.clear()
+        
+        formatter = logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s')
         
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setFormatter(logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s'))
-        
+        file_handler.setFormatter(formatter)
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s'))
+        console_handler.setFormatter(formatter)
         
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
         
         self.error_logger = logging.getLogger(f"error_logger_{self.model_name}")
         self.error_logger.setLevel(logging.ERROR)
-        self.error_logger.handlers.clear()
+        if self.error_logger.hasHandlers(): self.error_logger.handlers.clear()
         
         error_handler = logging.FileHandler(error_log_file, encoding='utf-8')
         error_handler.setFormatter(logging.Formatter('%(asctime)s - [ERROR] - %(message)s'))
         self.error_logger.addHandler(error_handler)
     
     def _load_processed_indices(self):
-        """从输出文件加载已处理的索引"""
+        """Loads indices of already processed items from the output file."""
         processed = set()
         if os.path.exists(self.output_file):
             try:
                 with open(self.output_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    if isinstance(data, list):
-                        for item in data:
-                            if 'index' in item:
-                                processed.add(item['index'])
-                        self.logger.info(f"从输出文件加载了 {len(processed)} 条已处理记录")
-            except Exception as e:
-                self.logger.warning(f"加载已处理记录失败: {e}")
+                    for item in json.load(f):
+                        if 'index' in item:
+                            processed.add(item['index'])
+                self.logger.info(f"Loaded {len(processed)} processed record indices from output file.")
+            except (json.JSONDecodeError, IOError) as e:
+                self.logger.warning(f"Could not load processed records: {e}")
         return processed
     
     def _initialize_output_file(self):
-        """初始化输出文件"""
+        """Initializes the output file, preserving existing valid data."""
         with self._output_file_lock:
-            if os.path.exists(self.output_file):
+            if not os.path.exists(self.output_file):
+                with open(self.output_file, 'w', encoding='utf-8') as f:
+                    json.dump([], f)
+                self.logger.info("Created new output file.")
+            else:
                 try:
                     with open(self.output_file, 'r', encoding='utf-8') as f:
-                        existing_data = json.load(f)
-                        if isinstance(existing_data, list):
-                            self.logger.info(f"输出文件已存在，包含 {len(existing_data)} 条历史记录")
-                        else:
-                            with open(self.output_file, 'w', encoding='utf-8') as f:
-                                json.dump([], f, ensure_ascii=False)
-                            self.logger.info("输出文件格式错误，已重新初始化")
-                except (json.JSONDecodeError, Exception) as e:
+                        data = json.load(f)
+                    if not isinstance(data, list):
+                        raise ValueError("Output file is not a JSON list.")
+                    self.logger.info(f"Output file exists with {len(data)} records. Appending new results.")
+                except (json.JSONDecodeError, ValueError, IOError) as e:
                     backup_file = f"{self.output_file}.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                     os.rename(self.output_file, backup_file)
-                    self.logger.warning(f"输出文件读取失败，已备份至: {backup_file}")
+                    self.logger.warning(f"Invalid output file found, backed up to: {backup_file}. Re-initializing.")
                     with open(self.output_file, 'w', encoding='utf-8') as f:
-                        json.dump([], f, ensure_ascii=False)
-            else:
-                with open(self.output_file, 'w', encoding='utf-8') as f:
-                    json.dump([], f, ensure_ascii=False)
-                self.logger.info("创建新的输出文件")
+                        json.dump([], f)
     
     def _append_result_to_file(self, result):
-        """增量写入单个结果到文件"""
+        """Appends a single result to the JSON output file in a thread-safe manner."""
         with self._output_file_lock:
             try:
-                with open(self.output_file, 'r', encoding='utf-8') as f:
+                with open(self.output_file, 'r+', encoding='utf-8') as f:
                     data = json.load(f)
-                
-                if not isinstance(data, list):
-                    data = []
-                
-                clean_result = {
-                    "index": result["index"],
-                    "video1_path": result["video1_path"],
-                    "video2_path": result["video2_path"],
-                    "response": result["response"]
-                }
-                data.append(clean_result)
-                
-                with open(self.output_file, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                
-                self.logger.debug(f"成功增量写入结果，当前共 {len(data)} 条记录")
-                
-            except Exception as e:
-                self.logger.error(f"增量写入失败: {e}")
-                backup_file = f"{self.output_file}.incremental"
-                try:
-                    if os.path.exists(backup_file):
-                        with open(backup_file, 'r', encoding='utf-8') as f:
-                            backup_data = json.load(f)
-                    else:
-                        backup_data = []
                     
                     clean_result = {
                         "index": result["index"],
@@ -357,367 +301,277 @@ Ensure that the thinking process is thorough but remains focused on the query. T
                         "video2_path": result["video2_path"],
                         "response": result["response"]
                     }
-                    backup_data.append(clean_result)
+                    data.append(clean_result)
                     
-                    with open(backup_file, 'w', encoding='utf-8') as f:
-                        json.dump(backup_data, f, ensure_ascii=False, indent=2)
-                    
-                    self.logger.warning(f"结果已保存到备用文件: {backup_file}")
-                except Exception as e2:
-                    self.logger.error(f"备用文件写入也失败: {e2}")
+                    f.seek(0)
+                    f.truncate()
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                self.logger.debug(f"Successfully appended result. Total records: {len(data)}")
+            except Exception as e:
+                self.logger.error(f"Failed to append to main output file: {e}")
     
-    def _load_system_prompt(self):
-        """加载系统提示词"""
-        prompt_path = self.prompt_file
-        
-        if not os.path.exists(prompt_path):
-            error_msg = f"❌ 错误: 提示词文件不存在: {prompt_path}"
+    def _load_prompt_from_file(self):
+        """Loads the system prompt from the specified text file."""
+        if not os.path.exists(self.prompt_file):
+            error_msg = f"❌ ERROR: Prompt file not found: {self.prompt_file}"
             self.logger.error(error_msg)
-            print("\n" + "="*60)
-            print(error_msg)
-            print("请创建提示词文件后再运行程序！")
-            print("="*60)
-            sys.exit(1)
+            sys.exit(error_msg)
         
         try:
-            with open(prompt_path, "r", encoding="utf-8") as f:
+            with open(self.prompt_file, "r", encoding="utf-8") as f:
                 prompt = f.read().strip()
-            
             if not prompt:
-                error_msg = f"❌ 错误: 提示词文件为空: {prompt_path}"
+                error_msg = f"❌ ERROR: Prompt file is empty: {self.prompt_file}"
                 self.logger.error(error_msg)
-                print("\n" + "="*60)
-                print(error_msg)
-                print("请在提示词文件中添加内容！")
-                print("="*60)
-                sys.exit(1)
+                sys.exit(error_msg)
             
-            self.logger.info(f"✅ 成功加载系统提示词文件: {prompt_path}")
-            self.logger.info(f"提示词长度: {len(prompt)} 字符")
-            
+            self.logger.info(f"✅ Successfully loaded prompt file: {self.prompt_file}")
+            self.logger.info(f"Prompt length: {len(prompt)} characters.")
             return prompt
-            
         except Exception as e:
-            error_msg = f"❌ 错误: 读取提示词文件失败: {e}"
+            error_msg = f"❌ ERROR: Failed to read prompt file: {e}"
             self.logger.error(error_msg)
-            sys.exit(1)
+            sys.exit(error_msg)
     
     def _log_error(self, error_info):
-        """记录错误信息到日志"""
+        """Logs detailed error information to the separate error log."""
         self.error_logger.error(json.dumps(error_info, ensure_ascii=False, indent=2))
     
     def load_input_data(self):
-        """从JSON文件加载输入数据"""
-        self.logger.info(f"开始加载输入文件: {self.input_json_file}")
-        
-        if not os.path.exists(self.input_json_file):
-            raise FileNotFoundError(f"输入文件不存在: {self.input_json_file}")
-        
-        data_list = []
+        """Loads and parses the input JSON file."""
+        self.logger.info(f"Loading input file: {self.input_json_file}")
         
         try:
             with open(self.input_json_file, 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
             
+            data_list = []
+            source_list = []
             if isinstance(json_data, list):
-                for idx, item in enumerate(json_data):
-                    if 'video1_path' in item and 'video2_path' in item:
-                        entry = {
-                            'index': idx,
-                            'video1_path': item['video1_path'],
-                            'video2_path': item['video2_path']
-                        }
-                        data_list.append(entry)
-                    else:
-                        self.logger.warning(f"第{idx}项缺少必要的视频路径字段")
+                source_list = json_data
             elif isinstance(json_data, dict):
-                video_pairs = json_data.get('video_pairs', json_data.get('data', [json_data]))
-                if isinstance(video_pairs, list):
-                    for idx, item in enumerate(video_pairs):
-                        if 'video1_path' in item and 'video2_path' in item:
-                            entry = {
-                                'index': idx,
-                                'video1_path': item['video1_path'],
-                                'video2_path': item['video2_path']
-                            }
-                            data_list.append(entry)
-                elif 'video1_path' in json_data and 'video2_path' in json_data:
-                    entry = {
-                        'index': 0,
-                        'video1_path': json_data['video1_path'],
-                        'video2_path': json_data['video2_path']
-                    }
-                    data_list.append(entry)
+                source_list = json_data.get('video_pairs', json_data.get('data', [json_data]))
+
+            for idx, item in enumerate(source_list):
+                if 'video1_path' in item and 'video2_path' in item:
+                    data_list.append({
+                        'index': idx,
+                        'video1_path': item['video1_path'],
+                        'video2_path': item['video2_path']
+                    })
+                else:
+                    self.logger.warning(f"Item at index {idx} is missing required 'video1_path' or 'video2_path' keys.")
             
-            self.logger.info(f"✅ 成功加载 {len(data_list)} 条数据")
+            self.logger.info(f"✅ Loaded {len(data_list)} data entries.")
             return data_list
-            
         except Exception as e:
-            self.logger.error(f"加载输入文件失败: {e}")
+            self.logger.error(f"Failed to load or parse input file: {e}")
             raise
     
-    def generate(self, image_files, qs: str):
-        """LLaVA 生成函数"""
-        image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
-        if IMAGE_PLACEHOLDER in qs:
-            if self.model.config.mm_use_im_start_end:
-                qs = re.sub(IMAGE_PLACEHOLDER, image_token_se, qs)
-            else:
-                qs = re.sub(IMAGE_PLACEHOLDER, DEFAULT_IMAGE_TOKEN, qs)
+    def generate_response(self, image_files, question: str):
+        """Generates a response from the LLaVA model for the given images and question."""
+        image_token_seq = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
+        
+        # Replace placeholder or prepend image token sequence
+        if IMAGE_PLACEHOLDER in question:
+            question = re.sub(IMAGE_PLACEHOLDER, image_token_seq if self.model.config.mm_use_im_start_end else DEFAULT_IMAGE_TOKEN, question)
         else:
-            if self.model.config.mm_use_im_start_end:
-                qs = image_token_se + "\n" + qs
-            else:
-                qs = DEFAULT_IMAGE_TOKEN + "\n" + qs
+            prefix = image_token_seq if self.model.config.mm_use_im_start_end else DEFAULT_IMAGE_TOKEN
+            question = prefix + "\n" + question
 
-        conv_mode = "llava_v1"
-        conv = conv_templates[conv_mode].copy()
-        conv.append_message(conv.roles[0], qs)
+        conv = conv_templates["llava_v1"].copy()
+        conv.append_message(conv.roles[0], question)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
 
-        images = image_files
-        image_sizes = [x.size for x in images]
         images_tensor = process_images(
-            images,
-            self.image_processor,
-            self.model.config
+            image_files, self.image_processor, self.model.config
         ).to(self.model.device, dtype=torch.float16)
 
-        input_ids = (
-            tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
-            .unsqueeze(0)
-            .cuda()
-        )
+        input_ids = tokenizer_image_token(
+            prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
+        ).unsqueeze(0).cuda()
 
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
                 images=images_tensor,
-                image_sizes=image_sizes,
-                do_sample= False,
-                temperature=0,
-                top_p=None,
-                num_beams=1,
-                max_new_tokens=512,
+                image_sizes=[img.size for img in image_files],
+                do_sample=self.temperature > 0,
+                temperature=self.temperature,
+                max_new_tokens=self.max_new_tokens,
                 use_cache=True,
+                num_beams=1,
             )
 
-        outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-        return outputs
-    
+        return self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+
     def process_video_pair(self, entry):
-        """处理单个视频对"""
+        """Processes a single pair of videos."""
         video1_path = entry['video1_path']
         video2_path = entry['video2_path']
         
         if not os.path.exists(video1_path):
-            raise FileNotFoundError(f"视频文件未找到: {video1_path}")
+            raise FileNotFoundError(f"Video file not found: {video1_path}")
         if not os.path.exists(video2_path):
-            raise FileNotFoundError(f"视频文件未找到: {video2_path}")
+            raise FileNotFoundError(f"Video file not found: {video2_path}")
         
-        # 分别处理两个视频，每个视频采样32帧
         frame_images1 = process_video_to_image_list(
-            video1_path, 
-            input_size=self.input_size,
-            max_num=self.max_num,
-            num_segments=self.max_frames_per_video
+            video1_path, self.input_size, self.max_patches, self.max_frames_per_video
         )
         frame_images2 = process_video_to_image_list(
-            video2_path,
-            input_size=self.input_size,
-            max_num=self.max_num,
-            num_segments=self.max_frames_per_video
+            video2_path, self.input_size, self.max_patches, self.max_frames_per_video
         )
         
-        # 合并所有帧
         all_frames = frame_images1 + frame_images2
-        full_prompt = """ROLE & TASK\nYou are an objective video analyst. Your task is to compare a Source video and a Destination video, reporting only verifiable visual facts.\nCRITICAL RULES:\nRadical Objectivity: This is your most important rule. Describe only what is visually present. Do not use subjective words (e.g., "beautiful," "sad"), make assumptions, or interpret actions. If a detail is not 100% clear, you MUST omit it.\nEnglish Only: Your entire response must be in English.\nNo Timestamps: Do not mention specific timecodes or frame numbers.\nConcise & Factual: Be direct and avoid unnecessary embellishment. Ensure similarities and differences do not contradict each other.\nOUTPUT FORMAT\nStructure your response using the following categories. For each, list Similarities and Differences. Only include categories where there are noticeable things to report.\nsubject\nstyle\nbackground\ncamera\nmotion\nposition\nplayback technique\nANALYSIS GUIDELINES\nSubject: Describe the type, quantity, appearance, and pose of subjects.\nStyle: You MUST use only these terms: American comic style, Ukiyo-e, Anime, Pixel Art, Ghibli Style, Cyberpunk, Steampunk, Low Poly, Voxel Art, Minimalist, Flat Design, Retro, Oil Painting, Watercolor, Sketch, Graffiti, Ink Wash Painting, Black and White, Monochromatic, CG Rendering, realistic (un-stylized).\nBackground: Describe the environment, lighting, and key background objects.\nCamera: Describe the camera's angle, scale (e.g., medium shot), and movement.\nMotion: Describe the subjects' actions and movements.\nPosition: Describe the relative placement of subjects in the frame.\nPlayback Technique: You MUST use only these terms: slow-motion, fast-forward, reverse, forward motion.\n"""
-        full_prompt += f"Source video: first {len(frame_images1)} frames\n"
-        full_prompt += f"Destination video: next {len(frame_images2)} frames after Source video\n"
-        full_prompt += "Please analyze these two videos and provide a comparison."
+        
+        # The prompt guides the model on how to reference the frames.
+        full_prompt = f"Source video is represented by the first {len(frame_images1)} frames. Destination video is represented by the next {len(frame_images2)} frames.\n\n{self.system_prompt}"
+        
         try:
-            response = self.generate(all_frames, full_prompt)
-            # 如果启用了思考模式，提取最终答案
-            if self.thinking and '</think>' in response:
+            response = self.generate_response(all_frames, full_prompt)
+            if self.use_thinking_prompt and '</think>' in response:
                 response = response.split('</think>', 1)[-1].strip()
-            
             return response
         except Exception as e:
-            self.logger.error(f"模型推理过程中发生错误: {str(e)}")
-            raise e
-    
+            self.logger.error(f"Error during model inference: {e}")
+            raise
+
     def process_all(self):
-        """处理所有数据"""
+        """Main loop to process all video pairs."""
         self.start_time = time.time()
         
         data_list = self.load_input_data()
-        
         if not data_list:
-            self.logger.info("没有需要处理的数据")
+            self.logger.info("No data to process.")
             return
-        
+            
         pending_data = [entry for entry in data_list if entry['index'] not in self.processed_indices]
-        
         if not pending_data:
-            self.logger.info("✅ 所有数据已处理完成")
+            self.logger.info("✅ All data has already been processed.")
             return
         
-        total = len(data_list)
-        pending = len(pending_data)
+        total_count = len(data_list)
+        pending_count = len(pending_data)
+        self.skipped_count = total_count - pending_count
         
-        self.logger.info(f"总数据: {total} 条")
-        self.logger.info(f"已处理: {len(self.processed_indices)} 条")
-        self.logger.info(f"待处理: {pending} 条")
+        self.logger.info(f"Total entries: {total_count}, Processed: {self.skipped_count}, Pending: {pending_count}")
+        self.logger.info("="*60 + "\nStarting processing with LLaVA model...\n" + "="*60)
         
-        self.logger.info("="*60)
-        self.logger.info("开始处理 (使用 LLaVA 模型)")
-        self.logger.info(f"增量写入模式: 启用")
-        self.logger.info("="*60)
-        
-        with tqdm(total=pending, desc="处理进度") as pbar:
+        with tqdm(total=pending_count, desc="Processing Progress") as pbar:
             for entry in pending_data:
-                self.logger.info(f"\n处理视频对 {entry['index']}")
+                self.logger.info(f"\nProcessing video pair index {entry['index']}")
                 
                 max_retries = 3
-                retry_count = 0
-                success = False
-                
-                while retry_count < max_retries and not success:
+                for attempt in range(1, max_retries + 1):
                     try:
                         response = self.process_video_pair(entry)
-                        
                         result = {
                             "index": entry['index'],
                             "video1_path": entry['video1_path'],
                             "video2_path": entry['video2_path'],
                             "response": response
                         }
-                        
                         self._append_result_to_file(result)
                         self.processed_indices.add(entry['index'])
-                        
-                        self.successful += 1
-                        self.logger.info(f"[Entry {entry['index']}] ✅ 处理成功并已保存")
-                        
-                        success = True
-                        pbar.update(1)
-                        
+                        self.successful_count += 1
+                        self.logger.info(f"[Index {entry['index']}] ✅ Successfully processed and saved.")
+                        break # Success, exit retry loop
                     except Exception as e:
-                        self.logger.error(f"处理错误: {str(e)}")
-                        self.error_logger.error(f"处理错误详情: {traceback.format_exc()}")
-                        retry_count += 1
-                        
-                        if retry_count < max_retries:
-                            self.logger.warning(f"正在重试 {retry_count}/{max_retries}...")
-                            time.sleep(2)
+                        self.logger.error(f"Error on attempt {attempt}/{max_retries}: {e}")
+                        self.error_logger.error(f"Error details for index {entry['index']}:\n{traceback.format_exc()}")
+                        if attempt == max_retries:
+                            self.failed_count += 1
+                            self.logger.error(f"[Index {entry['index']}] ❌ FAILED after all retries.")
+                            self._log_error({
+                                "index": entry['index'], "video1_path": entry['video1_path'], "video2_path": entry['video2_path'],
+                                "error": str(e), "timestamp": datetime.now().isoformat()
+                            })
                         else:
-                            self.failed += 1
-                            self.logger.error(f"[Entry {entry['index']}] ❌ 处理失败")
-                            
-                            error_info = {
-                                "index": entry['index'],
-                                "video1_path": entry['video1_path'],
-                                "video2_path": entry['video2_path'],
-                                "error": str(e),
-                                "timestamp": datetime.now().isoformat()
-                            }
-                            self._log_error(error_info)
-                            pbar.update(1)
+                            self.logger.warning("Retrying...")
+                            time.sleep(2)
+                pbar.update(1)
         
-        self.logger.info(f"✅ 所有结果已保存到: {self.output_file}")
+        self.logger.info(f"✅ All results saved to: {self.output_file}")
         self.print_summary()
     
     def print_summary(self):
-        """打印处理摘要"""
-        elapsed = time.time() - self.start_time
-        total_processed = self.successful + self.failed
+        """Prints a final summary of the processing run."""
+        elapsed_time = time.time() - self.start_time
+        total_processed = self.successful_count + self.failed_count
         
-        self.logger.info("\n" + "="*60)
-        self.logger.info("处理完成 - 统计摘要")
-        self.logger.info("="*60)
-        self.logger.info(f"总耗时: {elapsed/60:.2f} 分钟")
-        self.logger.info(f"处理总数: {total_processed}")
-        self.logger.info(f"成功: {self.successful}")
-        self.logger.info(f"失败: {self.failed}")
-        self.logger.info(f"跳过: {self.skipped_processed}")
+        self.logger.info("\n" + "="*60 + "\nProcessing Complete - Summary\n" + "="*60)
+        self.logger.info(f"Total run time: {elapsed_time/60:.2f} minutes")
+        self.logger.info(f"Total items attempted in this run: {total_processed}")
+        self.logger.info(f"  - Successful: {self.successful_count}")
+        self.logger.info(f"  - Failed: {self.failed_count}")
+        self.logger.info(f"Items skipped (already processed): {self.skipped_count}")
         
         if total_processed > 0:
-            self.logger.info(f"成功率: {self.successful/total_processed*100:.2f}%")
-            self.logger.info(f"平均处理时间: {elapsed/total_processed:.2f} 秒/条")
+            success_rate = (self.successful_count / total_processed) * 100
+            avg_time = elapsed_time / total_processed
+            self.logger.info(f"Success rate: {success_rate:.2f}%")
+            self.logger.info(f"Average processing time: {avg_time:.2f} seconds/item")
         
-        self.logger.info(f"\n输出文件: {self.output_file}")
-        self.logger.info(f"日志目录: {os.path.join(LOG_FOLDER, self.model_name)}")
-
-
-def parse_args():
-    """解析命令行参数"""
-    parser = argparse.ArgumentParser(
-        description='LLaVA 视频对比分析处理程序',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    
-    parser.add_argument('--model_name', type=str, default='llava-v1.6-vicuna-7b',
-                       help='模型名称')
-    parser.add_argument('--model_path', type=str, default=None,
-                       help='模型路径（如不指定则使用默认路径）')
-    parser.add_argument('--input_json', type=str, default='videos.json', 
-                       help='输入JSON文件路径')
-    parser.add_argument('--prompt_file', type=str, default='prompt_generate.txt', 
-                       help='系统提示词文件路径')
-    parser.add_argument('--max_frames', type=int, default=16, 
-                       help='每个视频最大帧数')
-    parser.add_argument('-t', '--thinking', action='store_true',
-                       help='启用思考模式')
-    
-    return parser.parse_args()
-
+        self.logger.info(f"\nOutput file: {self.output_file}")
+        self.logger.info(f"Log directory: {os.path.join(self.log_folder, self.model_name)}")
 
 def main():
-    """主函数"""
-    args = parse_args()
+    """Main execution function."""
+    parser = argparse.ArgumentParser(
+        description='LLaVA-based Video Comparison and Analysis Tool.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--model_path', type=str, required=True, help="Path to the local LLaVA model directory.")
+    parser.add_argument('--input_json', type=str, default='videos.json', help='Path to the input JSON file with video pairs.')
+    parser.add_argument('--prompt_file', type=str, default='prompt.txt', help='Path to the file containing the system prompt.')
+    parser.add_argument('--output_folder', type=str, default='response', help='Directory to save output JSON results.')
+    parser.add_argument('--log_folder', type=str, default='logs', help='Directory to save log files.')
+    parser.add_argument('--max_frames', type=int, default=16, help='Maximum number of frames to sample from each video.')
+    parser.add_argument('--thinking', action='store_true', help='Enable the "thinking" prompt for step-by-step reasoning.')
+    
+    args = parser.parse_args()
     
     print("="*60)
-    print("LLaVA 视频对比分析处理程序")
-    print("增量写入模式：已启用")
-    print("文件锁保护：已启用")
+    print("LLaVA Video Comparison and Analysis Tool")
+    print("Incremental write mode: Enabled")
+    print("File lock protection: Enabled")
     print("="*60)
     
     config = {
-        "model_name": args.model_name,
         "model_path": args.model_path,
         "input_json_file": args.input_json,
         "prompt_file": args.prompt_file,
+        "output_folder": args.output_folder,
+        "log_folder": args.log_folder,
         "max_frames_per_video": args.max_frames,
-        "thinking": args.thinking,
+        "use_thinking_prompt": args.thinking,
     }
     
-    print(f"配置信息:")
-    print(f"  - 模型名称: {config['model_name']}")
-    print(f"  - 输入文件: {config['input_json_file']}")
+    model_name_for_display = get_model_name_from_path(config['model_path'])
+    mode_suffix = "thinking" if config['use_thinking_prompt'] else "no_thinking"
     
-    # 根据思考模式选择输出文件名
-    suffix = "_thinking_results.json" if config['thinking'] else "_nothinking_results.json"
-    print(f"  - 输出文件: {os.path.join(OUTPUT_FOLDER, config['model_name'] + suffix)}")
-    print(f"  - 日志目录: {os.path.join(LOG_FOLDER, config['model_name'])}")
-    print(f"  - 每个视频最大帧数: {config['max_frames_per_video']}")
-    print(f"  - 思考模式: {'启用' if config['thinking'] else '禁用'}")
+    print("Configuration:")
+    print(f"  - Model Name: {model_name_for_display}")
+    print(f"  - Input File: {config['input_json_file']}")
+    print(f"  - Output File: {os.path.join(config['output_folder'], f'{model_name_for_display}_{mode_suffix}_results.json')}")
+    print(f"  - Log Folder: {config['log_folder']}")
+    print(f"  - Max Frames per Video: {config['max_frames_per_video']}")
+    print(f"  - Thinking Mode: {'Enabled' if config['use_thinking_prompt'] else 'Disabled'}")
     print("="*60)
     
     try:
         processor = LLaVAProcessor(config)
         processor.process_all()
-        print("\n✅ 处理完成!")
+        print("\n✅ Processing finished successfully!")
     except KeyboardInterrupt:
-        print("\n⚠️ 处理被用户中断")
+        print("\n⚠️ Processing was interrupted by the user.")
     except Exception as e:
-        print(f"\n❌ 程序异常: {e}")
+        print(f"\n❌ A critical error occurred: {e}")
         traceback.print_exc()
         return 1
     
     return 0
 
-
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    sys.exit(main())

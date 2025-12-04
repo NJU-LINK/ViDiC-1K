@@ -2,11 +2,9 @@ import json
 import io
 import sys
 
-# 保证输出 UTF-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def check_checklist(json_path):
-    # 读取 JSON 文件
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
@@ -14,8 +12,8 @@ def check_checklist(json_path):
     simi_questions = 0
     difi_questions = 0
 
-    simi_incorrect = []  # 存储不是 "no" 的位置
-    difi_incorrect = []  # 存储不是 "yes" 的位置
+    simi_incorrect = []  
+    difi_incorrect = []
 
     for idx, item in enumerate(data):
         structured = item.get("structured_analysis", {})
@@ -54,5 +52,5 @@ def check_checklist(json_path):
         print("Differences 答案全部为 'yes'")
 
 if __name__ == "__main__":
-    json_file = r"C:\Users\wjt11\Desktop\checklist_final.json"
+    json_file = r"D:\video_edit\temp_work\checklist_final.json"
     check_checklist(json_file)

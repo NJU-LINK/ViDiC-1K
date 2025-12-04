@@ -1,5 +1,5 @@
 """
-视频帧提取对比分析工具 - Kimi本地版本（显存优化）
+Video Frame Extraction and Comparison Analysis Tool - Kimi Local Version (VRAM Optimized)
 """
 
 import os
@@ -19,7 +19,7 @@ import gc
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-# 设置环境变量优化显存
+# Set environment variables to optimize VRAM
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 log_dir = "logs"
@@ -61,7 +61,7 @@ class VideoProcessor:
         self.max_pairs = config.get('max_pairs', None)
         self.model_delay = config.get('model_delay', 2)
         self.timeout = config.get('timeout', 300)
-        self.model_path = config.get('model_path', '/root/bayes-tmp/workplace/model/kimi')
+        self.model_path = config.get('model_path', 'moonshot-ai/Kimi-VL')
         self.resume_from_checkpoint = config.get('resume_from_checkpoint', True)
         self.max_retries = config.get('max_retries', 3)
         self.frame_interval_seconds = config.get('frame_interval_seconds', 1.0)
@@ -77,39 +77,39 @@ class VideoProcessor:
             if directory and not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
         
-        # 清理显存
+        # Clear VRAM
         torch.cuda.empty_cache()
         gc.collect()
         
-        # 初始化Kimi模型（优化显存）
-        logger.info("正在加载Kimi模型...")
+        # Initialize Kimi model (VRAM optimized)
+        logger.info("Loading Kimi model...")
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_path,
-            torch_dtype=torch.float16,  # 使用float16节省显存
+            torch_dtype=torch.float16,  # Use float16 to save VRAM
             device_map="auto",
             trust_remote_code=True,
             attn_implementation="flash_attention_2",
-            low_cpu_mem_usage=True,  # 减少CPU内存使用
+            low_cpu_mem_usage=True,  # Reduce CPU memory usage
         )
         self.processor = AutoProcessor.from_pretrained(
             self.model_path, 
             trust_remote_code=True
         )
         
-        # 设置模型为评估模式
+        # Set model to evaluation mode
         self.model.eval()
         
-        logger.info("✅ Kimi模型加载完成")
+        logger.info("✅ Kimi model loaded successfully")
         
-        # 显示显存使用情况
+        # Display VRAM usage
         if torch.cuda.is_available():
             for i in range(torch.cuda.device_count()):
                 allocated = torch.cuda.memory_allocated(i) / 1024**3
                 reserved = torch.cuda.memory_reserved(i) / 1024**3
-                logger.info(f"GPU {i}: 已分配 {allocated:.2f}GB, 已保留 {reserved:.2f}GB")
+                logger.info(f"GPU {i}: Allocated {allocated:.2f}GB, Reserved {reserved:.2f}GB")
         
         logger.info(f"="*80)
-        logger.info(f"配置: Model=Kimi-VL, FPS={1/self.frame_interval_seconds:.1f}, MaxFrames={self.max_frames_per_video}")
+        logger.info(f"Config: Model=Kimi-VL, FPS={1/self.frame_interval_seconds:.1f}, MaxFrames={self.max_frames_per_video}")
         logger.info(f"="*80)
         
         self.successful = 0
@@ -123,14 +123,14 @@ class VideoProcessor:
         self._initialize_output_file()
     
     def extract_frames_from_video(self, video_path, video_label=""):
-        """提取视频帧并保存到磁盘，返回帧路径列表"""
+        """Extract video frames and save to disk, return list of frame paths"""
         frame_paths = []
         cap = None
         
         try:
             cap = cv2.VideoCapture(video_path)
             if not cap.isOpened():
-                raise ValueError(f"无法打开: {video_path}")
+                raise ValueError(f"Cannot open: {video_path}")
             
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
@@ -138,9 +138,9 @@ class VideoProcessor:
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             
-            logger.info(f"视频: {os.path.basename(video_path)} - {total_frames}帧, {fps:.1f}fps, {duration:.1f}s")
+            logger.info(f"Video: {os.path.basename(video_path)} - {total_frames} frames, {fps:.1f}fps, {duration:.1f}s")
             
-            # 计算需要提取的帧索引
+            # Calculate frame indices to extract
             frame_indices = []
             current_time = 0
             while current_time < duration:
@@ -154,49 +154,49 @@ class VideoProcessor:
             if len(frame_indices) > self.max_frames_per_video:
                 frame_indices = frame_indices[:self.max_frames_per_video]
             
-            logger.info(f"提取 {len(frame_indices)} 帧")
+            logger.info(f"Extracting {len(frame_indices)} frames")
             
-            # 创建视频专用文件夹
+            # Create video-specific folder
             video_name = os.path.splitext(os.path.basename(video_path))[0]
             video_frame_dir = os.path.join(self.temp_frame_dir, f"{video_name}_{video_label}")
             os.makedirs(video_frame_dir, exist_ok=True)
             
-            # 提取并保存帧
+            # Extract and save frames
             for i, frame_idx in enumerate(frame_indices):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
                 ret, frame = cap.read()
                 if not ret:
                     continue
                 
-                # 调整尺寸以节省显存
+                # Resize to save VRAM
                 if width > self.max_frame_width:
                     scale = self.max_frame_width / width
                     new_w = int(width * scale)
                     new_h = int(height * scale)
                     frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
                 
-                # 转换为RGB
+                # Convert to RGB
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(frame_rgb)
                 
-                # 保存为JPEG以节省空间
+                # Save as JPEG to save space
                 frame_filename = f"frame_{i:04d}.jpg"
                 frame_filepath = os.path.join(video_frame_dir, frame_filename)
                 img.save(frame_filepath, quality=85, optimize=True)
                 frame_paths.append(frame_filepath)
             
             cap.release()
-            logger.info(f"✅ 提取完成: {len(frame_paths)}帧保存至 {video_frame_dir}")
+            logger.info(f"✅ Extraction complete: {len(frame_paths)} frames saved to {video_frame_dir}")
             return frame_paths
             
         except Exception as e:
-            logger.error(f"❌ 提取失败: {e}")
+            logger.error(f"❌ Extraction failed: {e}")
             if cap:
                 cap.release()
             raise
     
     def cleanup_temp_frames(self, frame_paths):
-        """清理临时帧文件"""
+        """Clean up temporary frame files"""
         for path in frame_paths:
             try:
                 if os.path.exists(path):
@@ -204,7 +204,7 @@ class VideoProcessor:
             except:
                 pass
         
-        # 清理空文件夹
+        # Clean up empty folders
         if frame_paths:
             folder = os.path.dirname(frame_paths[0])
             try:
@@ -214,28 +214,28 @@ class VideoProcessor:
                 pass
     
     def process_with_kimi(self, frame_paths_video1, frame_paths_video2):
-        """使用Kimi模型处理视频帧（显存优化版本 - 指令模式优化）"""
+        """Process video frames using Kimi model (VRAM optimized version - instruction mode optimized)"""
         
-        # 清理显存
+        # Clear VRAM
         torch.cuda.empty_cache()
         gc.collect()
         
         try:
-            # 加载图像
+            # Load images
             loaded_images = []
             for frame_path in frame_paths_video1 + frame_paths_video2:
                 if os.path.exists(frame_path):
                     img = Image.open(frame_path)
-                    # 确保图片不会太大
+                    # Ensure image is not too large
                     if max(img.size) > self.max_frame_width:
                         img.thumbnail((self.max_frame_width, self.max_frame_width), Image.Resampling.LANCZOS)
                     loaded_images.append(img)
                 else:
-                    logger.warning(f"帧文件不存在: {frame_path}")
+                    logger.warning(f"Frame file does not exist: {frame_path}")
             
-            logger.info(f'加载了 {len(loaded_images)} 帧用于处理')
+            logger.info(f'Loaded {len(loaded_images)} frames for processing')
             
-            # 构建消息内容
+            # Build message content
             content = []
             content.append({"type": "text", "text": self.system_prompt})
             content.append({"type": "text", "text": f"\nSource video ({len(frame_paths_video1)} frames):"})
@@ -248,14 +248,14 @@ class VideoProcessor:
             
             messages = [{"role": "user", "content": content}]
             
-            # 处理文本和图像
+            # Process text and images
             text = self.processor.apply_chat_template(
                 messages, 
                 add_generation_prompt=True, 
                 return_tensors="pt"
             )
             
-            # 模型推理（显存优化 + 指令模式优化）
+            # Model inference (VRAM optimized + instruction mode optimized)
             with torch.no_grad():
                 with torch.amp.autocast('cuda', dtype=torch.float16):
                     inputs = self.processor(
@@ -266,15 +266,15 @@ class VideoProcessor:
                         truncation=True
                     ).to(self.model.device)
                     
-                    # 指令模型推荐配置：启用采样 + temperature=0.2
+                    # Instruction model recommended configuration: enable sampling + temperature=0.2
                     generated_ids = self.model.generate(
                         **inputs, 
                         max_new_tokens=1024,
-                        do_sample=True,           # 启用采样
-                        temperature=0.2,          # 低温度，更确定性但仍有轻微随机性
+                        do_sample=True,           # Enable sampling
+                        temperature=0.2,          # Low temperature, more deterministic but still slightly random
                         top_p=0.9,               # nucleus sampling
                         top_k=50,                # top-k sampling
-                        num_beams=1,             # 不使用beam search以节省显存
+                        num_beams=1,             # Don't use beam search to save VRAM
                         use_cache=True
                     )
                     
@@ -287,7 +287,7 @@ class VideoProcessor:
                         clean_up_tokenization_spaces=False
                     )[0]
             
-            # 释放显存
+            # Release VRAM
             del inputs, generated_ids, generated_ids_trimmed, loaded_images
             torch.cuda.empty_cache()
             gc.collect()
@@ -304,10 +304,10 @@ class VideoProcessor:
         video1_path = entry['video1_path']
         video2_path = entry['video2_path']
         
-        logger.info(f"\n[Entry {index}] 开始处理")
+        logger.info(f"\n[Entry {index}] Starting processing")
         
         if index in self.processed_indices:
-            logger.info(f"[Entry {index}] 已处理，跳过")
+            logger.info(f"[Entry {index}] Already processed, skipping")
             self.skipped_processed += 1
             return None
         
@@ -318,35 +318,35 @@ class VideoProcessor:
         
         while retry_count < self.max_retries:
             try:
-                # 清理显存
+                # Clear VRAM
                 torch.cuda.empty_cache()
                 gc.collect()
                 
                 for video_path in [video1_path, video2_path]:
                     if not os.path.exists(video_path):
-                        raise FileNotFoundError(f"不存在: {video_path}")
+                        raise FileNotFoundError(f"Does not exist: {video_path}")
                 
-                logger.info(f"[Entry {index}] 提取视频1帧...")
+                logger.info(f"[Entry {index}] Extracting video1 frames...")
                 frame_paths_video1 = self.extract_frames_from_video(video1_path, "source")
                 
-                logger.info(f"[Entry {index}] 提取视频2帧...")
+                logger.info(f"[Entry {index}] Extracting video2 frames...")
                 frame_paths_video2 = self.extract_frames_from_video(video2_path, "destination")
                 
-                # 显示当前显存使用
+                # Display current VRAM usage
                 if torch.cuda.is_available():
                     allocated = torch.cuda.memory_allocated(0) / 1024**3
-                    logger.info(f"推理前显存使用: {allocated:.2f}GB")
+                    logger.info(f"VRAM usage before inference: {allocated:.2f}GB")
                 
-                # 使用Kimi模型处理
+                # Process using Kimi model
                 with model_lock:
-                    logger.info(f"[Entry {index}] 调用Kimi模型...")
+                    logger.info(f"[Entry {index}] Calling Kimi model...")
                     start_time = time.time()
                     response_content = self.process_with_kimi(frame_paths_video1, frame_paths_video2)
                     inference_time = time.time() - start_time
-                    logger.info(f"[Entry {index}] 推理耗时: {inference_time:.2f}秒")
+                    logger.info(f"[Entry {index}] Inference time: {inference_time:.2f}s")
                     time.sleep(self.model_delay)
                 
-                # 清理临时文件
+                # Clean up temporary files
                 self.cleanup_temp_frames(frame_paths_video1)
                 self.cleanup_temp_frames(frame_paths_video2)
                 
@@ -366,22 +366,22 @@ class VideoProcessor:
                 self._append_result_to_file(result)
                 self._save_checkpoint(index, success=True)
                 self.successful += 1
-                logger.info(f"[Entry {index}] ✅ 成功")
+                logger.info(f"[Entry {index}] ✅ Success")
                 return result
                 
             except torch.cuda.OutOfMemoryError as e:
                 last_error = e
                 retry_count += 1
-                logger.error(f"[Entry {index}] ❌ 显存不足，尝试{retry_count}次")
+                logger.error(f"[Entry {index}] ❌ Out of VRAM, attempt {retry_count}")
                 
-                # 清理
+                # Clean up
                 self.cleanup_temp_frames(frame_paths_video1)
                 self.cleanup_temp_frames(frame_paths_video2)
                 torch.cuda.empty_cache()
                 gc.collect()
                 
                 if retry_count < self.max_retries:
-                    logger.info(f"等待{retry_count * 5}秒后重试...")
+                    logger.info(f"Waiting {retry_count * 5}s before retry...")
                     time.sleep(retry_count * 5)
                     
             except Exception as e:
@@ -389,10 +389,10 @@ class VideoProcessor:
                 retry_count += 1
                 self.cleanup_temp_frames(frame_paths_video1)
                 self.cleanup_temp_frames(frame_paths_video2)
-                logger.error(f"[Entry {index}] ❌ 尝试{retry_count}失败: {e}")
+                logger.error(f"[Entry {index}] ❌ Attempt {retry_count} failed: {e}")
                 traceback.print_exc()
                 
-                # 清理显存
+                # Clear VRAM
                 torch.cuda.empty_cache()
                 gc.collect()
                 
@@ -417,7 +417,7 @@ class VideoProcessor:
                 with open(self.output_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if isinstance(data, list):
-                        logger.info(f"输出文件已存在: {len(data)}条")
+                        logger.info(f"Output file exists: {len(data)} entries")
                         return
             except:
                 pass
@@ -435,12 +435,12 @@ class VideoProcessor:
                 with open(self.output_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
             except Exception as e:
-                logger.error(f"写入失败: {e}")
+                logger.error(f"Write failed: {e}")
     
     def _load_system_prompt(self):
         prompt_path = "prompt_generate.txt"
         if not os.path.exists(prompt_path):
-            default_prompt = "请对比分析这两个视频的差异，详细描述它们在内容、风格、质量等方面的不同。"
+            default_prompt = "Please compare and analyze the differences between these two videos, describing in detail their differences in content, style, quality, etc."
             with open(prompt_path, 'w', encoding='utf-8') as f:
                 f.write(default_prompt)
             return default_prompt
@@ -490,7 +490,7 @@ class VideoProcessor:
     
     def load_input_data(self):
         if not os.path.exists(self.input_json_file):
-            raise FileNotFoundError(f"输入文件不存在: {self.input_json_file}")
+            raise FileNotFoundError(f"Input file does not exist: {self.input_json_file}")
         
         data_list = []
         with open(self.input_json_file, 'r', encoding='utf-8') as f:
@@ -521,7 +521,7 @@ class VideoProcessor:
     
     def run(self):
         logger.info(f"\n{'='*80}")
-        logger.info(f"开始批量处理 (Kimi本地模型 - 显存优化版)")
+        logger.info(f"Starting batch processing (Kimi local model - VRAM optimized version)")
         logger.info(f"{'='*80}\n")
         
         self.start_time = time.time()
@@ -529,11 +529,11 @@ class VideoProcessor:
         try:
             data_list = self.load_input_data()
             if not data_list:
-                logger.error("没有数据")
+                logger.error("No data to process")
                 return
             
             total_pairs = len(data_list)
-            logger.info(f"共 {total_pairs} 对视频\n")
+            logger.info(f"Total {total_pairs} video pairs\n")
             
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 futures = {
@@ -544,22 +544,22 @@ class VideoProcessor:
                     try:
                         future.result(timeout=self.timeout)
                     except Exception as e:
-                        logger.error(f"任务执行错误: {e}")
+                        logger.error(f"Task execution error: {e}")
             
             elapsed = time.time() - self.start_time
             logger.info(f"\n{'='*80}")
-            logger.info(f"✅ 完成！")
-            logger.info(f"总数: {total_pairs}, 成功: {self.successful}, 失败: {self.failed}, 跳过: {self.skipped_processed}")
-            logger.info(f"用时: {elapsed:.2f}秒")
+            logger.info(f"✅ Complete!")
+            logger.info(f"Total: {total_pairs}, Success: {self.successful}, Failed: {self.failed}, Skipped: {self.skipped_processed}")
+            logger.info(f"Time elapsed: {elapsed:.2f}s")
             logger.info(f"{'='*80}\n")
             
         except KeyboardInterrupt:
-            logger.warning(f"\n用户中断")
+            logger.warning(f"\nInterrupted by user")
         except Exception as e:
-            logger.error(f"\n错误: {e}")
+            logger.error(f"\nError: {e}")
             traceback.print_exc()
         finally:
-            # 清理临时目录和显存
+            # Clean up temporary directory and VRAM
             if os.path.exists(self.temp_frame_dir):
                 try:
                     import shutil
@@ -574,7 +574,7 @@ class VideoProcessor:
 
 def main():
     config = {
-        'input_json_file': '/root/bayes-tmp/workplace/checklist.json',  
+        'input_json_file': 'input_videos.json',  
         'output_file': 'video_analysis_results_kimi.json',
         'error_file': 'video_analysis_errors_kimi.json',
         'checkpoint_file': 'processing_checkpoint_kimi.json',
@@ -582,14 +582,14 @@ def main():
         'max_pairs': None,
         'model_delay': 1,
         'timeout': 600,
-        'model_path': '/root/bayes-tmp/workplace/model/kimi',
+        'model_path': 'moonshot-ai/Kimi-VL',
         'resume_from_checkpoint': True,
         'max_retries': 3,
         
-        # 显存优化配置
-        'frame_interval_seconds': 2.0,    # 1fps，减少帧数
-        'max_frames_per_video': 4,        # 每个视频最多4帧（总共8帧）
-        'max_frame_width': 512,           # 降低分辨率到512
+        # VRAM optimization configuration
+        'frame_interval_seconds': 2.0,    # 1fps, reduce frame count
+        'max_frames_per_video': 4,        # Max 4 frames per video (8 frames total)
+        'max_frame_width': 512,           # Reduce resolution to 512
         'temp_frame_dir': 'temp_kimi_frames'
     }
     
