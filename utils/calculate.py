@@ -66,5 +66,5 @@ def calculate_global_scores(json_path):
 
 
 if __name__ == "__main__":
-    json_file = r"D:\video_edit\temp_work\glm.json"
+    json_file = r""
     calculate_global_scores(json_file)
