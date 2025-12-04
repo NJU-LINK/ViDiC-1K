@@ -49,7 +49,6 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 - **Data Sources**: Curated from 8+ public datasets (e.g., VidDiffBench, LMArena) and self-generated synthetic data (Veo3 + frame splicing).
 
 ## 📰 News
-- **[Current Date]** 📝 Paper submitted to CVPR 2026.
 - **[Coming Soon]** 🤗 ViDiC-1K Dataset will be available on Hugging Face.
 - **[Coming Soon]** 🚀 Evaluation code and leaderboards will be released.
 
