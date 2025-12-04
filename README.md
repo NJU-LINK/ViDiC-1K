@@ -1,5 +1,6 @@
 <div align="center">
   <h1>
+    <img src="assets/logo.png" width="200" alt="ViDiC Logo" style="vertical-align: middle; margin-bottom: 10px;"><br>
     ViDiC: Video Difference Captioning
   </h1>
   
