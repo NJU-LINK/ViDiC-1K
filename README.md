@@ -52,15 +52,6 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 - 🤗 ViDiC-1K Dataset is available on Hugging Face.
 - 🚀 Evaluation code and leaderboards is released.
 
-## 🚀 Quick Start
-
-### 🤗 Download Dataset
-
-```bash
-# Using huggingface-cli
-hf download YourOrg/ViDiC-1K --local-dir ./data/ViDiC-1K --include-pattern "*.mp4"
-``` 
-
 ## 📂 File Structure
 
 ```
