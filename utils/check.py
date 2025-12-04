@@ -24,33 +24,33 @@ def check_checklist(json_path):
         difi_questions += len(differences)
         total_questions += len(similarities) + len(differences)
 
-        # 检查 Similarities
+        # Check Similarities
         for q_idx, q in enumerate(similarities):
             ans = q.get("correct_answer", "").lower()
             if ans != "no":
                 simi_incorrect.append({"data_index": idx, "question_index": q_idx, "answer": ans})
 
-        # 检查 Differences
+        # Check Differences
         for q_idx, q in enumerate(differences):
             ans = q.get("correct_answer", "").lower()
             if ans != "yes":
                 difi_incorrect.append({"data_index": idx, "question_index": q_idx, "answer": ans})
 
-    # 输出结果
-    print(f"总问题数: {total_questions}")
-    print(f"Similarities 问题数: {simi_questions}")
-    print(f"Differences 问题数: {difi_questions}")
+    # Output results
+    print(f"Total questions: {total_questions}")
+    print(f"Similarities questions: {simi_questions}")
+    print(f"Differences questions: {difi_questions}")
 
     if simi_incorrect:
-        print(f"Similarities 中答案不是 'no' 的位置和答案: {simi_incorrect}")
+        print(f"Similarities with answers not 'no': {simi_incorrect}")
     else:
-        print("Similarities 答案全部为 'no'")
+        print("All Similarities answers are 'no'")
 
     if difi_incorrect:
-        print(f"Differences 中答案不是 'yes' 的位置和答案: {difi_incorrect}")
+        print(f"Differences with answers not 'yes': {difi_incorrect}")
     else:
-        print("Differences 答案全部为 'yes'")
+        print("All Differences answers are 'yes'")
 
 if __name__ == "__main__":
-    json_file = r"D:\video_edit\temp_work\checklist_final.json"
+    json_file = r""
     check_checklist(json_file)
