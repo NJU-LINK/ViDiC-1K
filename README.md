@@ -71,6 +71,7 @@ ViDiC/
 ├── inference/   # Inference scripts for popular models
 │   ├── get_response_GLM.py
 │   ├── get_response_gemini.py
+|   └── ......
 |
 ├── judge/   # judge with gpt5-mini
 │   ├── judge.py
