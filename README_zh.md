@@ -70,6 +70,9 @@ ViDiC/
 ├── inference/   # Inference scripts for popular models
 │   ├── get_response_GLM.py
 │   ├── get_response_gemini.py
+|
+├── judge/   # judge with gpt5-mini
+│   ├── judge.py
 │
 ├── prompt/
 │   ├── prompt_get_response.txt
@@ -79,7 +82,7 @@ ViDiC/
 │   └── example_response.json
 │
 └── utils/
-    └── calculate.py
+    └── calculate.py # get the score
 ```
 
 ## 📊 基准测试结果
