@@ -393,7 +393,7 @@ class VideoProcessor:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Source video:"},
+                        {"type": "text", "text": "Video A:"},
                         {
                             "type": "video",
                             "video": video1_path,
@@ -402,7 +402,7 @@ class VideoProcessor:
                             "max_pixels": 256 * 32 * 32,
                             "total_pixels": 16384 * 32 * 32,
                         },
-                        {"type": "text", "text": "Destination video:"},
+                        {"type": "text", "text": "Video B:"},
                         {
                             "type": "video",
                             "video": video2_path,

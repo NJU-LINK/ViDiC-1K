@@ -404,11 +404,11 @@ class VideoProcessor:
             
             # Construct multimodal message content
             content = []
-            content.append({"type": "text", "text": "Source video:"})
+            content.append({"type": "text", "text": "Video A:"})
             for _ in pil_images1:
                 content.append({"type": "image"})
             
-            content.append({"type": "text", "text": "\nDestination video:"})
+            content.append({"type": "text", "text": "\nVideo B:"})
             for _ in pil_images2:
                 content.append({"type": "image"})
             

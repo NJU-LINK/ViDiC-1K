@@ -377,9 +377,9 @@ class VideoProcessor:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Source video:"},
+                        {"type": "text", "text": "Video A:"},
                         video1_content,
-                        {"type": "text", "text": "Destination video:"},
+                        {"type": "text", "text": "Video B:"},
                         video2_content
                     ]
                 }

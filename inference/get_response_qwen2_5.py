@@ -386,7 +386,7 @@ class VideoProcessor:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Destination video:"},
+                        {"type": "text", "text": "Video A:"},
                         {
                             "type": "video",
                             "video": video1_path,
@@ -394,7 +394,7 @@ class VideoProcessor:
                             "min_pixels": 64 * 28 * 28,
                             "fps": self.fps,
                         },
-                        {"type": "text", "text": "Source video:"},
+                        {"type": "text", "text": "Video B:"},
                         {
                             "type": "video",
                             "video": video2_path,

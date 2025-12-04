@@ -449,9 +449,9 @@ class VideoProcessor:
         Process a pair of videos and generate comparative analysis.
         
         Args:
-            video1_path (str): Path to first video (source)
-            video2_path (str): Path to second video (destination)
-            
+            video1_path (str): Path to first video (Video A)
+            video2_path (str): Path to second video (Video B)
+
         Returns:
             str: Model's analysis response
         """
@@ -470,7 +470,7 @@ class VideoProcessor:
             audio = np.zeros(int(duration * sr), dtype=np.float32)
             
             # Build complete prompt
-            full_prompt = f"{self.system_prompt}\n\nSource video: [First {len(video1_frames)} frames]\nDestination video: [Next {len(video2_frames)} frames]"
+            full_prompt = f"{self.system_prompt}\n\nVideo A: [First {len(video1_frames)} frames]\nVideo B: [Next {len(video2_frames)} frames]"
             
             # Build model input
             prompt_text = self.build_prompt(full_prompt, len(all_frames))

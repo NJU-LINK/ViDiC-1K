@@ -426,7 +426,7 @@ Ensure that the thinking process is thorough but remains focused on the query. T
         all_frames = frame_images1 + frame_images2
         
         # The prompt guides the model on how to reference the frames.
-        full_prompt = f"Source video is represented by the first {len(frame_images1)} frames. Destination video is represented by the next {len(frame_images2)} frames.\n\n{self.system_prompt}"
+        full_prompt = f"Video A is represented by the first {len(frame_images1)} frames. Video B is represented by the next {len(frame_images2)} frames.\n\n{self.system_prompt}"
         
         try:
             response = self.generate_response(all_frames, full_prompt)

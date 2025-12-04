@@ -236,7 +236,7 @@ class VideoProcessor:
                 "type": "text",
                 "text": (
                     f"{self.system_prompt}\n\n"
-                    f"Source video ({len(loaded_images_v1)} frames are provided):"
+                    f"Video A ({len(loaded_images_v1)} frames are provided):"
                 )
             })
 
@@ -247,7 +247,7 @@ class VideoProcessor:
             # 3. Add video2 description text
             content_list.append({
                 "type": "text",
-                "text": f"\n\nDestination video ({len(loaded_images_v2)} frames are provided):"
+                "text": f"\n\nVideo B ({len(loaded_images_v2)} frames are provided):"
             })
 
             # 4. Add image placeholder for each frame in video2
@@ -431,11 +431,11 @@ class VideoProcessor:
                         raise FileNotFoundError(f"Does not exist: {video_path}")
           
                 logger.info(f"[Entry {index}] Extracting video1 frames...")
-                frame_paths_video1 = self.extract_frames_from_video(video1_path, "source")
+                frame_paths_video1 = self.extract_frames_from_video(video1_path, "video A")
           
                 logger.info(f"[Entry {index}] Extracting video2 frames...")
-                frame_paths_video2 = self.extract_frames_from_video(video2_path, "destination")
-          
+                frame_paths_video2 = self.extract_frames_from_video(video2_path, "video B")
+
                 if torch.cuda.is_available():
                     allocated = torch.cuda.memory_allocated(0) / 1024**3
                     logger.info(f"VRAM usage before inference: {allocated:.2f}GB")

@@ -222,17 +222,17 @@ class VideoProcessor:
                 logger.info(f"[Entry {index}] Extracting frames from video 2...")
                 frames_video2, temp_paths_video2 = self.extract_frames_from_video(video2_path)
                 
-                content_video1 = self.prepare_frames_for_api(frames_video1, "Source video")
-                content_video2 = self.prepare_frames_for_api(frames_video2, "Destination video")
-                
+                content_video1 = self.prepare_frames_for_api(frames_video1, "Video A")
+                content_video2 = self.prepare_frames_for_api(frames_video2, "Video B")
+
                 messages = [
                     {"role": "system", "content": self.system_prompt},
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Source video:"},
+                            {"type": "text", "text": "Video A:"},
                             *content_video1,
-                            {"type": "text", "text": "Destination video:"},
+                            {"type": "text", "text": "Video B:"},
                             *content_video2,
                         ]
                     }

@@ -223,35 +223,35 @@ class VideoProcessor:
         try:
             process_start_time = time.time()
             
-            self.logger.info(f"[Source Video] Loading: {os.path.basename(video1_path)}")
+            self.logger.info(f"[Video A] Loading: {os.path.basename(video1_path)}")
             video1_start_time = time.time()
             pixel_values1, num_patches_list1 = load_video(
                 video1_path, self.detail_logger, num_segments=self.num_segments,
-                max_num=self.max_num_patches, input_size=self.input_size, video_name="Source Video"
+                max_num=self.max_num_patches, input_size=self.input_size, video_name="Video A"
             )
             video1_load_time = time.time() - video1_start_time
-            self.logger.info(f"[Source Video] Load time: {video1_load_time:.2f}s")
+            self.logger.info(f"[Video A] Load time: {video1_load_time:.2f}s")
             
-            self.logger.info(f"[Destination Video] Loading: {os.path.basename(video2_path)}")
+            self.logger.info(f"[Video B] Loading: {os.path.basename(video2_path)}")
             video2_start_time = time.time()
             pixel_values2, num_patches_list2 = load_video(
                 video2_path, self.detail_logger, num_segments=self.num_segments,
-                max_num=self.max_num_patches, input_size=self.input_size, video_name="Destination Video"
+                max_num=self.max_num_patches, input_size=self.input_size, video_name="Video B"
             )
             video2_load_time = time.time() - video2_start_time
-            self.logger.info(f"[Destination Video] Load time: {video2_load_time:.2f}s")
-            
+            self.logger.info(f"[Video B] Load time: {video2_load_time:.2f}s")
+
             self.detail_logger.info(f"===== Video Comparison Details =====")
-            self.detail_logger.info(f"Source Video: {video1_path} ({len(num_patches_list1)} frames, {sum(num_patches_list1)} patches)")
-            self.detail_logger.info(f"Destination Video: {video2_path} ({len(num_patches_list2)} frames, {sum(num_patches_list2)} patches)")
+            self.detail_logger.info(f"Video A: {video1_path} ({len(num_patches_list1)} frames, {sum(num_patches_list1)} patches)")
+            self.detail_logger.info(f"Video B: {video2_path} ({len(num_patches_list2)} frames, {sum(num_patches_list2)} patches)")
             self.detail_logger.info(f"====================================")
             
             pixel_values = torch.cat([pixel_values1, pixel_values2], dim=0).to(DTYPE).to(DEVICE)
             num_patches_list = num_patches_list1 + num_patches_list2
             
-            video1_prefix = f"[SOURCE VIDEO: {os.path.basename(video1_path)}]\n" + "".join([f"Frame{i+1}: <image>\n" for i in range(len(num_patches_list1))])
-            video2_prefix = f"\n[DESTINATION VIDEO: {os.path.basename(video2_path)}]\n" + "".join([f"Frame{i+1}: <image>\n" for i in range(len(num_patches_list2))])
-            
+            video1_prefix = f"[VIDEO A: {os.path.basename(video1_path)}]\n" + "".join([f"Frame{i+1}: <image>\n" for i in range(len(num_patches_list1))])
+            video2_prefix = f"\n[VIDEO B: {os.path.basename(video2_path)}]\n" + "".join([f"Frame{i+1}: <image>\n" for i in range(len(num_patches_list2))])
+
             full_prompt = video1_prefix + video2_prefix + "\n" + self.system_prompt
             self.detail_logger.debug(f"Prompt length: {len(full_prompt)} characters")
             
@@ -274,8 +274,8 @@ class VideoProcessor:
             
             return {
                 "response": response,
-                "source_video_load_time": video1_load_time,
-                "destination_video_load_time": video2_load_time,
+                "video_a_load_time": video1_load_time,
+                "video_b_load_time": video2_load_time,
                 "inference_time": inference_time,
                 "total_time": total_process_time
             }
@@ -291,9 +291,9 @@ class VideoProcessor:
         index = entry['index']
         video1_path = entry['video1_path']
         video2_path = entry['video2_path']
-        
-        self.logger.info(f"\n{'='*60}\n[Entry {index}] Starting processing...\n  Source: {video1_path}\n  Destination: {video2_path}\n{'='*60}")
-        
+
+        self.logger.info(f"\n{'='*60}\n[Entry {index}] Starting processing...\n  Video A: {video1_path}\n  Video B: {video2_path}\n{'='*60}")
+
         if index in self.processed_indices:
             self.logger.info(f"[Entry {index}] Already processed, skipping.")
             self.skipped_count += 1
@@ -302,7 +302,7 @@ class VideoProcessor:
         last_error = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                for path, v_type in [(video1_path, 'Source'), (video2_path, 'Destination')]:
+                for path, v_type in [(video1_path, 'Video A'), (video2_path, 'Video B')]:
                     if not os.path.exists(path):
                         raise FileNotFoundError(f"{v_type} video file not found: {path}")
                 
@@ -311,15 +311,15 @@ class VideoProcessor:
                     time.sleep(self.model_delay)
                 
                 self.logger.info(f"[Entry {index}] Inference complete. Times: "
-                                 f"SrcLoad={result_data['source_video_load_time']:.2f}s, "
-                                 f"DstLoad={result_data['destination_video_load_time']:.2f}s, "
+                                 f"VideoALoad={result_data['video_a_load_time']:.2f}s, "
+                                 f"VideoBLoad={result_data['video_b_load_time']:.2f}s, "
                                  f"Infer={result_data['inference_time']:.2f}s, "
                                  f"Total={result_data['total_time']:.2f}s")
 
                 result = {
                     "index": index,
-                    "source_video_path": video1_path,
-                    "destination_video_path": video2_path,
+                    "video_a_path": video1_path,
+                    "video_b_path": video2_path,
                     "response": result_data["response"],
                     "processing_times": {k: v for k, v in result_data.items() if k != "response"},
                     "timestamp": datetime.now().isoformat()
@@ -349,7 +349,7 @@ class VideoProcessor:
         
         self.failed_count += 1
         error_info = {
-            "index": index, "source_video_path": video1_path, "destination_video_path": video2_path,
+            "index": index, "video_a_path": video1_path, "video_b_path": video2_path,
             "error": str(last_error), "traceback": traceback.format_exc(), "timestamp": datetime.now().isoformat()
         }
         self._append_to_file(self.error_file, error_info)

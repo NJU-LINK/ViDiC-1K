@@ -238,11 +238,11 @@ class VideoProcessor:
             # Build message content
             content = []
             content.append({"type": "text", "text": self.system_prompt})
-            content.append({"type": "text", "text": f"\nSource video ({len(frame_paths_video1)} frames):"})
+            content.append({"type": "text", "text": f"\nVideo A ({len(frame_paths_video1)} frames):"})
             for frame_path in frame_paths_video1:
                 content.append({"type": "image", "image": frame_path})
-            
-            content.append({"type": "text", "text": f"\nDestination video ({len(frame_paths_video2)} frames):"})
+
+            content.append({"type": "text", "text": f"\nVideo B ({len(frame_paths_video2)} frames):"})
             for frame_path in frame_paths_video2:
                 content.append({"type": "image", "image": frame_path})
             
@@ -326,12 +326,12 @@ class VideoProcessor:
                     if not os.path.exists(video_path):
                         raise FileNotFoundError(f"Does not exist: {video_path}")
                 
-                logger.info(f"[Entry {index}] Extracting video1 frames...")
-                frame_paths_video1 = self.extract_frames_from_video(video1_path, "source")
-                
-                logger.info(f"[Entry {index}] Extracting video2 frames...")
-                frame_paths_video2 = self.extract_frames_from_video(video2_path, "destination")
-                
+                logger.info(f"[Entry {index}] Extracting video A frames...")
+                frame_paths_video1 = self.extract_frames_from_video(video1_path, "video_a")
+
+                logger.info(f"[Entry {index}] Extracting video B frames...")
+                frame_paths_video2 = self.extract_frames_from_video(video2_path, "video_b")
+
                 # Display current VRAM usage
                 if torch.cuda.is_available():
                     allocated = torch.cuda.memory_allocated(0) / 1024**3

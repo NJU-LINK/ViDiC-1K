@@ -414,14 +414,14 @@ class KwaiKeyeProcessor:
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Source video:"},
+                    {"type": "text", "text": "\nVideo A:"},
                     {
                         "type": "video",
                         "video": video1_path,
                         "fps": self.fps,
                         "max_frames": self.max_frames_per_video
                     },
-                    {"type": "text", "text": "\nDestination video:"},
+                    {"type": "text", "text": "\nVideo B:"},
                     {
                         "type": "video",
                         "video": video2_path,

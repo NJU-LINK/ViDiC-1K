@@ -23,3 +23,9 @@ My entire response will be a single JSON object in the following format:
 }
 
 I am now ready to receive the [Model Description] and [Question] to perform this task.
+
+[Model Description]
+{description}
+
+[Question]
+{question}

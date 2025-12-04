@@ -129,9 +129,9 @@ class VideoProcessor:
                     "content": [
                         {"type": "text", "text": self.system_prompt + "/no_think"},
                         {"type": "text", "text": "/no_think"},
-                        {"type": "text", "text": "\nSource video:"},
+                        {"type": "text", "text": "\nVideo A:"},
                         {"type": "video", "video": video1_path},
-                        {"type": "text", "text": "\nDestination video:"},
+                        {"type": "text", "text": "\nVideo B:"},
                         {"type": "video", "video": video2_path},
                     ],
                 }

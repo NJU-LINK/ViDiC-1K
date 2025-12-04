@@ -463,8 +463,8 @@ Ensure that the thinking process is thorough but remains focused on the query. T
             image_tokens_2 = ''.join(['<image>' for _ in range(len(frames2))])
             
             prompt = f"{self.system_prompt}\n\n"
-            prompt += f"Source video ({len(frames1)} frames):\n{image_tokens_1}\n\n"
-            prompt += f"Destination video ({len(frames2)} frames):\n{image_tokens_2}\n\n"
+            prompt += f"Video A ({len(frames1)} frames):\n{image_tokens_1}\n\n"
+            prompt += f"Video B ({len(frames2)} frames):\n{image_tokens_2}\n\n"
             prompt += "Please analyze these two videos and provide a comparison."
             
             batch_prompts.append(prompt)

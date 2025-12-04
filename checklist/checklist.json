@@ -869,7 +869,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video A warm and soft, in contrast to the cooler-toned lighting with multiple visible Video As in the Video B?",
+          "question": "Is the lighting in the Video A warm and soft, in contrast to the cooler-toned lighting in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -2319,7 +2319,7 @@
       "Differences": [
         {
           "class": "background",
-          "question": "Regarding the lighting, does the Video B include a warm, yellow light Video A that is absent in the Video A?",
+          "question": "Regarding the lighting, does the Video B include a warm, yellow light source that is absent in the Video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -4326,7 +4326,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "Does the subject hold a paper with black dollar sign (\"$\") drawn on it initially, while in the Video B the paper is absent?",
+          "question": "Does the subject hold a paper with black dollar sign (\"$\") drawn on it initially in the Video A, while in the Video B the paper is absent?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -4351,14 +4351,14 @@
       "Differences": [
         {
           "class": "background",
-          "question": "Is there a yellow flower visible in the background, while in the Video B it is absent?",
+          "question": "Is there a yellow flower visible in the background in the Video A, while in the Video B it is absent?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "position",
-          "question": "Is there a yellow flower on the ground beside the dog , while in the Video B there is only grass at the same space?",
+          "question": "Is there a yellow flower on the ground beside the dog in Video A, while in the Video B there is only grass at the same space?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -4609,7 +4609,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "Is there a black top visible behind the red seats of the car in the Video B, while it is absent in the Video B?",
+          "question": "Is there a black top visible behind the red seats of the car in the Video A, while it is absent in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -4806,7 +4806,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "Is there a white board attached on the trunk of the tree, which is absent in the Video B?",
+          "question": "Is there a white board attached on the trunk of the tree in the Video A, which is absent in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -5005,7 +5005,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "Does the character have a gold neck piece with a blue gem on his chest, which is absent in the Video A?",
+          "question": "Does the character have a gold neck piece with a blue gem on his chest in the Video B, which is absent in the Video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -8468,7 +8468,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video A diffuse and neutral, in contrast to the Video B which features warm, yellow-orange lighting with a visible bright light Video A in the sky?",
+          "question": "Is the lighting in the Video A diffuse and neutral, in contrast to the Video B which features warm, yellow-orange lighting with a visible bright light source in the sky?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -8735,7 +8735,7 @@
         },
         {
           "class": "background",
-          "question": "In contrast to the Video A's diffuse lighting, are the light Video As in the Video B visible as long, rectangular fluorescent fixtures on the ceiling?",
+          "question": "In contrast to the Video A's diffuse lighting, are the light sources in the Video B visible as long, rectangular fluorescent fixtures on the ceiling?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -8774,7 +8774,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding the lighting, is the Video A characterized by bright, even lighting, while the Video B features warmer lighting with distinct light Video As visible in the ceiling?",
+          "question": "Regarding the lighting, is the Video A characterized by bright, even lighting, while the Video B features warmer lighting with distinct light sources visible in the ceiling?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -9429,7 +9429,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding lighting, does the Video B feature multiple visible Video As like pendant lamps, whereas the Video A is lit by a soft, diffuse light with no visible Video A?",
+          "question": "Regarding lighting, does the Video B feature multiple visible sources like pendant lamps, whereas the Video A is lit by a soft, diffuse light with no visible source?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -9596,7 +9596,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding lighting, is the Video A illuminated by general, diffuse light, while the Video B is lit by a distinct, bright light Video A that creates a circular reflection?",
+          "question": "Regarding lighting, is the Video A illuminated by general, diffuse light, while the Video B is lit by a distinct, bright light source that creates a circular reflection?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -9950,7 +9950,7 @@
       "Differences": [
         {
           "class": "background",
-          "question": "Is the primary light Video A in the Video A an artificial lamp, whereas in the Video B it is a fire in a fireplace?",
+          "question": "Is the primary light source in the Video A an artificial lamp, whereas in the Video B it is a fire in a fireplace?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -10291,7 +10291,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding the lighting, does the Video A show a single floor lamp as the visible light Video A, in contrast to the Video B which shows two lit wall sconces?",
+          "question": "Regarding the lighting, does the Video A show a single floor lamp as the visible light source, in contrast to the Video B which shows two lit wall sconces?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -10755,7 +10755,7 @@
         },
         {
           "class": "background",
-          "question": "Is it true that the light Video A on the right side of the scene in the Video A is a wall-mounted sconce, while in the Video B it is an illuminated floor lamp?",
+          "question": "Is it true that the light source on the right side of the scene in the Video A is a wall-mounted sconce, while in the Video B it is an illuminated floor lamp?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -12090,7 +12090,7 @@
         },
         {
           "class": "background",
-          "question": "Concerning the lighting, is the Video A characterized by more dim, more subdued lighting, whereas the Video B has brighter, warmer lighting from visible artificial Video As?",
+          "question": "Concerning the lighting, is the Video A characterized by more dim, more subdued lighting, whereas the Video B has brighter, warmer lighting from visible artificial sources?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -12164,7 +12164,7 @@
         },
         {
           "class": "subject",
-          "question": "Does the Sourse video end without text, while the Video B ends with text?",
+          "question": "Does the Video A end without text, while the Video B ends with text?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -12428,7 +12428,7 @@
       "Differences": [
         {
           "class": "camera",
-          "question": "Is the camera shot static in the original video but with rotation in the Video B?",
+          "question": "Is the camera shot static in the Video A but with rotation in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -12914,7 +12914,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video B noticeably brighter due to a light Video A on the left, compared to the dimmer, more uniform lighting in the Video A?",
+          "question": "Is the lighting in the Video B noticeably brighter due to a light source on the left, compared to the dimmer, more uniform lighting in the Video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -14896,7 +14896,7 @@
         },
         {
           "class": "background",
-          "question": "Are bright streetlights a visible Video A of illumination in the Video B, while no distinct light Video As are visible in the Video A?",
+          "question": "Are bright streetlights a visible source of illumination in the Video B, while no distinct light sources are visible in the Video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16310,7 +16310,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding lighting, does the Video A show lighting from a frontal Video A creating shadows, whereas the Video B has more diffused lighting with no strong directional shadows?",
+          "question": "Regarding lighting, does the Video A show lighting from a frontal source creating shadows, whereas the Video B has more diffused lighting with no strong directional shadows?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16423,14 +16423,14 @@
         },
         {
           "class": "camera",
-          "question": "Does the shot continuously zoom in during the Video A, while remaining static in the target video?",
+          "question": "Does the shot continuously zoom in during the Video A, while remaining static in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "motion",
-          "question": "Is the subject in the Video A lifting the dumbbell, while the subject in the target video is like rotating or spinning the dumbbell?",
+          "question": "Is the subject in the Video A lifting the dumbbell, while the subject in the Video B is like rotating or spinning the dumbbell?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16476,7 +16476,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "In the Video A, do the person and the dog remain stationary and visible, while in the target video they transform into smoke and disappear?",
+          "question": "In the Video A, do the person and the dog remain stationary and visible, while in the Video B they transform into smoke and disappear?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16500,21 +16500,21 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "Is the number of main subjects in the Video A 3 monkeys, while in the target video it is 2 monkeys?",
+          "question": "Is the number of main subjects in the Video A 3 monkeys, while in the Video B it is 2 monkeys?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "camera",
-          "question": "Does the camera lens remain stationary in the Video A, while in the target video it shifts from filming the side of the car to filming the front of the car?",
+          "question": "Does the camera lens remain stationary in the Video A, while in the Video B it shifts from filming the side of the car to filming the front of the car?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "motion",
-          "question": "In the Video A, do two monkeys open the car door to let a third monkey get in, while in the target video, two monkeys open the car door but no monkey gets in?",
+          "question": "In the Video A, do two monkeys open the car door to let a third monkey get in, while in the Video B, two monkeys open the car door but no monkey gets in?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16632,7 +16632,7 @@
       "Similarities": [
         {
           "class": "style",
-          "question": "Is the color tone different between the Video A and the target video?",
+          "question": "Is the color tone different between the Video A and the Video B?",
           "correct_answer": "no",
           "answer": "",
           "explanation": ""
@@ -16641,14 +16641,14 @@
       "Differences": [
         {
           "class": "position",
-          "question": "Is the subject gradually moving backward to the right in the Video A, while remaining relatively stationary in the target video?",
+          "question": "Is the subject gradually moving backward to the right in the Video A, while remaining relatively stationary in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "subject",
-          "question": "Has the facial expression of the person in the Video A changed, while it has remained unchanged in the target video?",
+          "question": "Has the facial expression of the person in the Video A changed, while it has remained unchanged in the Video B?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16800,7 +16800,7 @@
         },
         {
           "class": "motion",
-          "question": "Does the boy in the Video A turn around and run into the distance, while in the target video he turns around and walks slowly into the distance?",
+          "question": "Does the boy in the Video A turn around and run into the distance, while in the Video B he turns around and walks slowly into the distance?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -16874,7 +16874,7 @@
         },
         {
           "class": "position",
-          "question": "Is the huts arranging symmetrically, in contrast to the Video B where houses are spread out?",
+          "question": "Is the huts arranging symmetrically in Video A, in contrast to the Video B where houses are spread out?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -18534,7 +18534,7 @@
         },
         {
           "class": "position",
-          "question": "Are students in the Video A positioned in front of clear architectural features, whereas in the Video B they are often positioned against strong light Video As to create silhouettes?",
+          "question": "Are students in the Video A positioned in front of clear architectural features, whereas in the Video B they are often positioned against strong light sources to create silhouettes?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -18905,14 +18905,14 @@
         },
         {
           "class": "camera",
-          "question": "Is the camera Angle in the Video A level with the eyes, while in the target video, is the camera position slightly higher, with a slight downward Angle?",
+          "question": "Is the camera Angle in the Video A level with the eyes, while in the Video B, is the camera position slightly higher, with a slight downward Angle?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "motion",
-          "question": "Is the subject in the Video A completely still, while the subject in the target video is constantly running?",
+          "question": "Is the subject in the Video A completely still, while the subject in the Video B is constantly running?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -18965,7 +18965,7 @@
         },
         {
           "class": "camera",
-          "question": "Does the camera in the Video A rotate counterclockwise, while in the target video, it appears to rotate clockwise?",
+          "question": "Does the camera in the Video A rotate counterclockwise, while in the Video B, it appears to rotate clockwise?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21140,7 +21140,7 @@
       "Similarities": [
         {
           "class": "motion",
-          "question": "Does the subject in the Video A perform a normal backflip, while the subject in the target video continuously spins in the air after completing the backflip?",
+          "question": "Does the subject in the Video A perform a normal backflip, while the subject in the Video B continuously spins in the air after completing the backflip?",
           "correct_answer": "no",
           "answer": "",
           "explanation": ""
@@ -21193,7 +21193,7 @@
         },
         {
           "class": "camera",
-          "question": "Is the filming method different between the Video A and the target video?",
+          "question": "Is the filming method different between the Video A and the Video B?",
           "correct_answer": "no",
           "answer": "",
           "explanation": ""
@@ -21248,7 +21248,7 @@
       "Differences": [
         {
           "class": "position",
-          "question": "Is the text of the Video A in the upper left corner of the screen, and the text of the target video in the lower right corner of the screen?",
+          "question": "Is the text of the Video A in the upper left corner of the screen, and the text of the Video B in the lower right corner of the screen?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21287,7 +21287,7 @@
         },
         {
           "class": "motion",
-          "question": "Does this video have more hits on the wooden board than the original video?",
+          "question": "Does the video B have more hits on the wooden board than the video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21507,14 +21507,14 @@
       "Differences": [
         {
           "class": "camera",
-          "question": "Does the Video A start with a wider frame, while the target video starts with a tighter frame?",
+          "question": "Does the Video A start with a wider frame, while the Video B starts with a tighter frame?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "background",
-          "question": "Does the window in the target video show stairs that are not visible in the Video A?",
+          "question": "Does the window in the Video B show stairs that are not visible in the Video A?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21530,7 +21530,7 @@
       "Similarities": [
         {
           "class": "motion",
-          "question": "Are the subject's actions different between the Video A and the target video?",
+          "question": "Are the subject's actions different between the Video A and the Video B?",
           "correct_answer": "no",
           "answer": "",
           "explanation": ""
@@ -21539,14 +21539,14 @@
       "Differences": [
         {
           "class": "position",
-          "question": "Is it that the text in the original video goes from the top left to the bottom right, but in the target video the text stays in the bottom right?",
+          "question": "Is it that the text in the Video A goes from the top left to the bottom right, but in the Video B the text stays in the bottom right?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
         },
         {
           "class": "camera",
-          "question": "Whether the Video A shot has no change, while the target video shot has changes?",
+          "question": "Whether the Video A shot has no change, while the Video B shot has changes?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21697,7 +21697,7 @@
         },
         {
           "class": "background",
-          "question": "Does the Video A feature lighting from specific point Video As like glowing eyes and structures, in contrast to the Video B where the lighting is primarily ambient from the sky?",
+          "question": "Does the Video A feature lighting from specific point sources like glowing eyes and structures, in contrast to the Video B where the lighting is primarily ambient from the sky?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21834,7 +21834,7 @@
       "Differences": [
         {
           "class": "subject",
-          "question": "In the Video A, does the woman initially stand on the ground, while in the target video, she initially rides on the cow?",
+          "question": "In the Video A, does the woman initially stand on the ground, while in the Video B, she initially rides on the cow?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -21953,7 +21953,7 @@
         },
         {
           "class": "position",
-          "question": "In the Video A, is the initial position of the hand at the top of the screen, while in the Destinatino video, the initial position of the hand is closer to the middle of the screen?",
+          "question": "In the Video A, is the initial position of the hand at the top of the screen, while in the Video B, the initial position of the hand is closer to the middle of the screen?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -22866,7 +22866,7 @@
         },
         {
           "class": "motion",
-          "question": "Does a human hand enter the frame from the bottom right and moves an object but not in the Video B",
+          "question": "Does a human hand enter the frame from the bottom right and moves an object in the Video A but not in the Video B",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -23028,7 +23028,7 @@
         },
         {
           "class": "motion",
-          "question": "Does the main subject uses her right leg to pull the hoodie off over her head, while in the Video B she uses her right leg to kick a hoodie from the floor up?",
+          "question": "Does the main subject in the Video A uses her right leg to pull the hoodie off over her head, while in the Video B she uses her right leg to kick a hoodie from the floor up?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -24176,7 +24176,7 @@
         },
         {
           "class": "background",
-          "question": "Is the type of lighting Video A different between the Video A and Video B?",
+          "question": "Is the type of lighting source different between the Video A and Video B?",
           "correct_answer": "no",
           "answer": "",
           "explanation": ""
@@ -26090,7 +26090,7 @@
         },
         {
           "class": "background",
-          "question": "Does the Video A show lighting effects like natural daylight and shadows, whereas the Video B has a uniformly white background with no depicted light Video A or shadows?",
+          "question": "Does the Video A show lighting effects like natural daylight and shadows, whereas the Video B has a uniformly white background with no depicted light source or shadows?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -26143,7 +26143,7 @@
         },
         {
           "class": "background",
-          "question": "Does the Video A feature diffused lighting consistent with an overcast day, while the Video B is rendered without a specific light Video A?",
+          "question": "Does the Video A feature diffused lighting consistent with an overcast day, while the Video B is rendered without a specific light source?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -26836,7 +26836,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video A flat and even, whereas the lighting in the Video B is complex and originates from artificial neon and holographic Video As?",
+          "question": "Is the lighting in the Video A flat and even, whereas the lighting in the Video B is complex and originates from artificial neon and holographic sources?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -27023,7 +27023,7 @@
         },
         {
           "class": "background",
-          "question": "In terms of lighting, is the Video A depicted without a specific light Video A, while the Video B is set at night and illuminated by multi-colored neon lights?",
+          "question": "In terms of lighting, is the Video A depicted without a specific light source, while the Video B is set at night and illuminated by multi-colored neon lights?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -32344,7 +32344,7 @@
         },
         {
           "class": "background",
-          "question": "Does the Video B's background contain a single, circular, out-of-focus light Video A, which is absent in the Video A's background?",
+          "question": "Does the Video B's background contain a single, circular, out-of-focus light source, which is absent in the Video A's background?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -32510,7 +32510,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video A provided by visible crystal chandeliers, in contrast to the Video B's bright, diffuse light from an unseen Video A?",
+          "question": "Is the lighting in the Video A provided by visible crystal chandeliers, in contrast to the Video B's bright, diffuse light from an unseen source?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -33620,7 +33620,7 @@
       "Differences": [
         {
           "class": "playback technique",
-          "question": "Is the Video B a reverse playback of the Video A, while the Video A plays normally?",
+          "question": "Is the Video B a reverse playback of the video, while the Video A plays normally?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -35396,7 +35396,7 @@
         },
         {
           "class": "background",
-          "question": "Does the Video A lack distinct shadows due to diffused lighting, while the Video B features long shadows cast by a bright light Video A?",
+          "question": "Does the Video A lack distinct shadows due to diffused lighting, while the Video B features long shadows cast by a bright light source?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -35489,7 +35489,7 @@
       "Differences": [
         {
           "class": "background",
-          "question": "Regarding the lighting, is the Video A illuminated by diffuse, overcast light, in contrast to the Video B which is illuminated by a bright, backlit light Video A from the upper middle?",
+          "question": "Regarding the lighting, is the Video A illuminated by diffuse, overcast light, in contrast to the Video B which is illuminated by a bright, backlit light source from the upper middle?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -35606,7 +35606,7 @@
       "Differences": [
         {
           "class": "background",
-          "question": "Is the color of the primary light Video A different, with the Video A featuring warm, yellow-orange light and the Video B featuring cool, blue-white light?",
+          "question": "Is the color of the primary light source different, with the Video A featuring warm, yellow-orange light and the Video B featuring cool, blue-white light?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -36692,7 +36692,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding lighting, does the Video A feature a strong, directional light Video A that creates defined shadows, while the Video B uses flat, diffused lighting with no prominent shadows?",
+          "question": "Regarding lighting, does the Video A feature a strong, directional light source that creates defined shadows, while the Video B uses flat, diffused lighting with no prominent shadows?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -36993,7 +36993,7 @@
         },
         {
           "class": "background",
-          "question": "Is the lighting in the Video A diffuse and even, whereas the Video B features a strong, directional light Video A from the upper right?",
+          "question": "Is the lighting in the Video A diffuse and even, whereas the Video B features a strong, directional light source from the upper right?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -37158,7 +37158,7 @@
         },
         {
           "class": "background",
-          "question": "Does the background in the Video A show a wet street reflecting neon signs, in contrast to the Video B which features street lamps as the primary light Video A without prominent neon signs?",
+          "question": "Does the background in the Video A show a wet street reflecting neon signs, in contrast to the Video B which features street lamps as the primary light source without prominent neon signs?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -37237,7 +37237,7 @@
         },
         {
           "class": "background",
-          "question": "Regarding lighting, does the Video A use artificial blue and purple neon lights as its primary illumination, whereas the Video B features a uniform, ambient light Video A with a yellow hue?",
+          "question": "Regarding lighting, does the Video A use artificial blue and purple neon lights as its primary illumination, whereas the Video B features a uniform, ambient light source with a yellow hue?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
@@ -38237,7 +38237,7 @@
         },
         {
           "class": "background",
-          "question": "Are the primary light Video As different, with the Video A being lit by neon signs and the Video B by natural, golden sunlight?",
+          "question": "Are the primary light sources different, with the Video A being lit by neon signs and the Video B by natural, golden sunlight?",
           "correct_answer": "yes",
           "answer": "",
           "explanation": ""
