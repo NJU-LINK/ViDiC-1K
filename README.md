@@ -49,31 +49,17 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 - **Data Sources**: Curated from 8+ public datasets (e.g., VidDiffBench, LMArena) and self-generated synthetic data (Veo3 + frame splicing).
 
 ## 📰 News
-- **[Coming Soon]** 🤗 ViDiC-1K Dataset will be available on Hugging Face.
-- **[Coming Soon]** 🚀 Evaluation code and leaderboards will be released.
+- 🤗 ViDiC-1K Dataset is available on Hugging Face.
+- 🚀 Evaluation code and leaderboards is released.
 
 ## 🚀 Quick Start
 
-### Installation
-
-```bash
-git clone https://github.com/YourOrg/ViDiC.git
-cd ViDiC
-pip install -r requirements.txt
-```
-
 ### 🤗 Download Dataset
+
 ```bash
 # Using huggingface-cli
 hf download YourOrg/ViDiC-1K --local-dir ./data/ViDiC-1K --include-pattern "*.mp4"
 ``` 
-
-### Evaluation
-We provide scripts to run the Dual-Checklist evaluation using the LLM-as-a-Judge protocol.
-
-```bash
-
-```
 
 ## 📂 File Structure
 
@@ -141,14 +127,22 @@ ViDiC/
 **Key Findings**
 1. 📉 Significant Gaps: Describing temporal differences (Motion, Camera) is much harder than static attributes (Style, Subject).
 2. ⚖️ Trade-off: "Thinking" models improve Difference detection but often hallucinate differences in identical areas (lower Similarity score).
-3. 🚧 Critical Weakness: Almost all models fail significantly on Playback Techniques (e.g., reverse, slow-motion).
+3. 🚧 Critical Weakness: Almost all models fail significantly on Camera works and Playback Techniques (e.g., reverse, slow-motion).
 
 ## 📝 Citation
 
 If you find ViDiC useful in your research, please consider citing our paper:
 
 ```bibtex
-
+@misc{wu2025vidicvideodifferencecaptioning,
+      title={ViDiC: Video Difference Captioning}, 
+      author={Jiangtao Wu and Shihao Li and Zhaozhou Bian and Yuanxing Zhang and Jialu Chen and Runzhe Wen and An Ping and Yiwen He and Jiakai Wang and Jiaheng Liu},
+      year={2025},
+      eprint={2512.03405},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2512.03405}, 
+    }
 ```
 
 ## 📄 License
