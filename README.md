@@ -4,10 +4,10 @@
   </h1>
   
   <p align="center">
-    <a href="https://github.com/YourOrg/ViDiC"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
-    <a href="https://arxiv.org/abs/YourArxivID"><img src="https://img.shields.io/badge/arXiv-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
-    <a href="https://vidic-project.github.io/"><img src="https://img.shields.io/badge/Project-Page-blue?style=for-the-badge" alt="Project Page"></a>
-    <a href="https://huggingface.co/datasets/YourOrg/ViDiC-1K"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-yellow?style=for-the-badge" alt="Dataset"></a>
+    <a href="[https://github.com/YourOrg/ViDiC](https://github.com/NJU-LINK/ViDiC-1K)"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"></a>
+    <a href="[https://arxiv.org/abs/YourArxivID](https://arxiv.org/abs/2512.03405)"><img src="https://img.shields.io/badge/arXiv-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
+    <a href="[https://vidic-project.github.io/](https://vidic-1k.github.io/)"><img src="https://img.shields.io/badge/Project-Page-blue?style=for-the-badge" alt="Project Page"></a>
+    <a href="[https://huggingface.co/datasets/YourOrg/ViDiC-1K](https://huggingface.co/datasets/NJU-LINK/ViDiC-1K)"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-yellow?style=for-the-badge" alt="Dataset"></a>
   </p>
 
   <p align="center">
