@@ -33,7 +33,7 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 ## 🌟 Key Features
 
 - **🎥 First Video Difference Captioning Benchmark**: A unified task requiring descriptive, comparative, and temporal understanding of video pairs.
-- **📝 ViDiC-1K Dataset**: 1,000 curated video pairs annotated with over 4,000 comparative checklist items.
+- **📝 ViDiC-1K Dataset**: 1,000 curated video pairs annotated with over 3720 comparative checklist items.
 - **🔍 Dual-Checklist Evaluation**: A rigorous framework evaluating **Similarity** (checking for hallucinations) and **Difference** (checking for perception) separately.
 - **🤖 Scalable LLM-as-a-Judge**: An automated, interpretable evaluation protocol using GPT-5-Mini to quantify factual accuracy against human-verified ground truths.
 
@@ -44,7 +44,6 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 </p>
 
 - **Total Pairs**: 1,000 (Real & Synthetic)
-- **Total Checklist Items**: ~4,100 (1,056 Similarity / 3,051 Difference)
 - **Evaluation Dimensions**: 7 Categories (Subject, Style, Background, Camera, Motion, Position, Playback Technique)
 - **Video Duration**: Primarily 2-12 seconds
 - **Data Sources**: Curated from 8+ public datasets (e.g., VidDiffBench, LMArena) and self-generated synthetic data (Veo3 + frame splicing).
@@ -65,9 +64,7 @@ ViDiC/
 │   └── checklist.json
 │
 ├── data/   # Video files  Get from the hugging face
-│   └── LMArena
-|   └── style
-|   └── ......
+|  
 |
 ├── inference/   # Inference scripts for popular models
 │   ├── get_response_GLM.py
@@ -91,31 +88,37 @@ ViDiC/
 ## 📊 Benchmark Results
 ### Overall Model Performance
 
+## 📊 Benchmark Results
+### Overall Model Performance
+
 | Model | Param. | Avg. | Diff. | Sim. | Subject | Motion | Pos. | Backgr. | Cam. | Style | Tech. |
 | :--- | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **_Closed-Source_** | | | | | | | | | | | |
-| Gemini-2.5-Pro | 🔒 | 66.72 | 63.73 | 75.33 | 67.71 | 62.78 | 68.24 | 70.65 | 59.97 | 75.79 | 74.32 |
-| GPT-5 | 🔒 | 62.94 | 57.32 | 79.17 | 61.52 | 57.78 | 65.31 | 69.15 | 57.39 | 77.60 | 54.66 |
-| Gemini-2.5-Flash | 🔒 | 58.87 | 52.11 | 78.37 | 59.63 | 51.29 | 57.23 | 63.98 | 52.82 | 81.58 | 55.41 |
-| Gemini-2.0-Flash | 🔒 | 53.71 | 50.26 | 63.66 | 58.90 | 48.71 | 57.86 | 57.11 | 47.30 | 55.79 | 18.92 |
-| GPT-4o | 🔒 | 49.95 | 39.14 | 81.12 | 46.79 | 43.53 | 51.89 | 53.73 | 49.18 | 77.89 | 27.03 |
-| **_Open-Source_** | | | | | | | | | | | |
-| Qwen3-VL | 32B | 61.38 | 58.54 | 71.50 | 64.60 | 51.77 | 62.00 | 68.62 | 52.66 | 74.86 | 47.83 |
-| Qwen3-VL | 8B | 53.23 | 50.44 | 63.20 | 58.66 | 43.33 | 52.33 | 63.49 | 40.92 | 66.28 | 11.59 |
-| Mimo-VL-SFT | 7B | 52.59 | 46.51 | 70.17 | 54.39 | 46.55 | 51.25 | 57.31 | 48.37 | 67.71 | 25.33 |
-| InternVL-3.5 💡 | 38B | 52.44 | 46.25 | 70.30 | 52.66 | 43.04 | 53.77 | 59.80 | 47.80 | 72.63 | 20.27 |
-| InternVL-3.5 | 38B | 50.49 | 40.09 | 80.46 | 48.35 | 44.34 | 51.89 | 54.93 | 49.18 | 76.32 | 14.86 |
-| Qwen2.5-VL-Instruct | 72B | 49.71 | 42.56 | 70.30 | 48.07 | 44.82 | 48.11 | 55.92 | 46.42 | 68.95 | 22.97 |
-| Qwen2.5-VL-Instruct | 32B | 47.83 | 43.42 | 60.53 | 49.72 | 40.78 | 49.69 | 55.12 | 38.39 | 68.42 | 20.27 |
-| InternVL-3.5 💡 | 8B | 45.01 | 41.18 | 56.07 | 46.79 | 37.06 | 45.60 | 54.03 | 35.76 | 61.58 | 17.57 |
-| InternVL-3.5 | 8B | 43.67 | 35.68 | 66.70 | 43.21 | 37.54 | 45.60 | 48.46 | 39.02 | 68.42 | 14.86 |
-| GLM-4.1V 💡 | 9B | 40.95 | 33.99 | 61.08 | 42.60 | 34.35 | 38.13 | 47.26 | 33.83 | 64.58 | 14.67 |
-| Qwen2.5-VL-Instruct | 7B | 39.39 | 35.22 | 51.42 | 39.82 | 33.82 | 37.42 | 47.96 | 30.74 | 58.95 | 14.86 |
-| Kimi-VL-A3B 💡 | 16B | 35.16 | 28.68 | 53.88 | 37.48 | 26.00 | 35.63 | 42.99 | 22.56 | 70.31 | 14.67 |
-| InternVideo2.5 | 7B | 32.70 | 23.14 | 60.32 | 32.72 | 23.43 | 33.13 | 36.42 | 28.70 | 66.15 | 14.67 |
-| Keye-VL-1.5 | 8B | 32.45 | 25.53 | 57.13 | 32.86 | 25.80 | 30.67 | 39.18 | 24.69 | 60.00 | 8.70 |
-| Llama-3.2 | 11B | 19.43 | 5.23 | 61.01 | 14.48 | 20.31 | 17.84 | 13.44 | 29.56 | 40.00 | 11.70 |
-| LLaVA-V1.6-Vicuna | 7B | 8.96 | 5.11 | 20.07 | 7.49 | 12.20 | 13.44 | 6.96 | 10.02 | 6.25 | 6.67 |
+| **Human** 🧠 | - | 94.46 | 92.99 | 98.57 | 96.36 | 94.36 | 90.14 | 96.70 | 92.90 | 82.31 | 97.18 |
+| **_Closed-Source_** |
+| Gemini-2.5-Pro | 🔒 | **69.33** | **66.84** | 76.27 | **71.95** | **61.71** | **70.42** | **75.47** | 60.41 | 79.27 | **66.20** |
+| Gemini-3.0-Flash | 🔒 | 65.81 | 60.04 | 81.87 | 66.17 | 57.78 | 68.31 | 69.31 | **63.88** | 77.44 | 61.97 |
+| Gemini-2.5-Flash | 🔒 | 63.73 | 57.87 | 80.04 | 66.60 | 56.92 | 64.79 | 66.12 | 58.99 | **81.71** | 42.25 |
+| GPT-5 | 🔒 | 62.26 | 62.03 | 62.90 | 62.63 | 56.79 | 68.05 | 74.03 | 49.75 | 61.18 | 40.62 |
+| **_Open-Source_** |
+| Qwen3-VL | 32B | 63.90 | 62.75 | 67.11 | 66.64 | 55.38 | 69.01 | 70.30 | 58.20 | 62.20 | 45.07 |
+| Qwen3-VL 💡 | 8B | 57.57 | 49.43 | 80.24 | 59.70 | 48.03 | 59.86 | 62.27 | 54.73 | 71.95 | 26.76 |
+| Qwen3-VL | 8B | 55.75 | 50.99 | 69.04 | 56.76 | 46.84 | 58.45 | 64.91 | 49.21 | 62.20 | 29.58 |
+| InternVL-3.5 💡 | 38B | 53.62 | 47.64 | 70.26 | 54.48 | 43.42 | 53.17 | 64.36 | 49.21 | 54.27 | 26.76 |
+| Mimo-VL-SFT 💡 | 7B | 51.26 | 41.20 | 79.33 | 51.72 | 39.32 | 49.30 | 55.78 | 53.31 | 71.95 | 26.76 |
+| Qwen2.5-VL-Instruct | 72B | 46.22 | 38.04 | 69.01 | 45.00 | 35.10 | 47.54 | 53.74 | 45.34 | 62.80 | 23.94 |
+| InternVL-3.5 | 38B | 45.85 | 36.83 | 70.98 | 45.11 | 40.00 | 45.94 | 51.71 | 42.74 | 61.59 | 21.13 |
+| InternVL-3.5 💡 | 8B | 45.78 | 37.80 | 68.02 | 46.23 | 33.68 | 46.48 | 53.14 | 42.74 | 66.46 | 21.13 |
+| Qwen2.5-VL-Instruct | 32B | 45.30 | 35.55 | 72.48 | 45.28 | 35.62 | 46.83 | 52.53 | 43.92 | 52.44 | 22.54 |
+| Keye-VL-1.5 💡 | 8B | 45.24 | 30.94 | 85.12 | 43.99 | 35.89 | 45.55 | 50.72 | 45.76 | 63.98 | 21.43 |
+| Mimo-VL-SFT | 7B | 43.09 | 33.27 | 70.47 | 45.67 | 32.82 | 43.31 | 44.88 | 45.58 | 51.83 | 22.54 |
+| Qwen2.5-VL-Instruct | 7B | 38.68 | 25.90 | 74.31 | 35.95 | 32.53 | 35.21 | 41.52 | 43.44 | 57.32 | 22.54 |
+| InternVL-3.5 | 8B | 38.18 | 29.34 | 62.83 | 39.33 | 30.48 | 38.03 | 43.89 | 33.12 | 54.88 | 18.31 |
+| Keye-VL-1.5 | 8B | 38.12 | 28.94 | 63.74 | 38.51 | 31.53 | 34.52 | 43.72 | 35.52 | 51.55 | 21.43 |
+| GLM-4.1V 💡 | 9B | 36.51 | 29.04 | 57.33 | 38.30 | 30.94 | 33.10 | 40.81 | 34.38 | 41.46 | 21.13 |
+| Kimi-VL-A3B 💡 | 16B | 34.82 | 21.23 | 72.71 | 33.21 | 28.03 | 31.34 | 35.97 | 40.69 | 52.44 | 21.13 |
+| InternVideo2.5 | 7B | 34.18 | 16.95 | 82.26 | 29.76 | 30.60 | 32.75 | 33.00 | 42.74 | 57.32 | 21.13 |
+| LLaVA-V1.6-Vicuna | 7B | 25.19 | 0.58 | **93.79** | 17.89 | 25.98 | 22.18 | 17.16 | 43.69 | 49.39 | 22.54 |
+| ViDiC-Qwen (Ours) | 7B | 50.43 | 41.72 | 74.69 | 50.37 | 38.70 | 52.11 | 57.38 | 48.73 | 68.10 | 26.76 |
 
 
 *Note: **Diff.** measures perception of changes; **Sim.** checks for hallucinations (inverse accuracy). MLLMs generally struggle with Camera and Playback Techniques.*
