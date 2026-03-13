@@ -33,7 +33,7 @@ To address this, we introduce **ViDiC (Video Difference Captioning)**, a new tas
 ## 🌟 Key Features
 
 - **🎥 First Video Difference Captioning Benchmark**: A unified task requiring descriptive, comparative, and temporal understanding of video pairs.
-- **📝 ViDiC-1K Dataset**: 1,000 curated video pairs annotated with over 3720 comparative checklist items.
+- **📝 ViDiC-1K Dataset**: 1,000 curated video pairs annotated with 3720 comparative checklist items.
 - **🔍 Dual-Checklist Evaluation**: A rigorous framework evaluating **Similarity** (checking for hallucinations) and **Difference** (checking for perception) separately.
 - **🤖 Scalable LLM-as-a-Judge**: An automated, interpretable evaluation protocol using GPT-5-Mini to quantify factual accuracy against human-verified ground truths.
 
