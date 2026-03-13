@@ -9,29 +9,25 @@ from threading import Lock, Thread, Semaphore
 from queue import Queue
 from datetime import datetime
 import sys
-import argparse
+import io
 
-# Set standard output to UTF-8 encoding
 sys.stdout.reconfigure(encoding='utf-8')
 
-# ==================== Configuration ====================
+API_KEY = ""
+MODEL_URL = ""
 MODEL_NAME = "gpt-5-mini"
 
-# ==================== Global Locks ====================
 file_lock = Lock()
 console_lock = Lock()
 
 
-# ==================== Utility Functions ====================
 def safe_print(msg):
-    """Thread-safe print"""
     with console_lock:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {msg}")
 
 
 def safe_post_json(url, headers, payload, max_retries=3, timeout=120):
-    """POST request with retry mechanism"""
     for attempt in range(1, max_retries + 1):
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=timeout)
@@ -39,7 +35,7 @@ def safe_post_json(url, headers, payload, max_retries=3, timeout=120):
                 return response
             elif response.status_code == 429:
                 wait_time = min(2 ** attempt * 5, 60)
-                safe_print(f"⚠️  Rate limited, waiting {wait_time} seconds")
+                safe_print(f"⚠️  Rate limited, waiting {wait_time}s")
                 time.sleep(wait_time)
             else:
                 safe_print(f"❌ Request failed ({response.status_code}): {response.text[:100]}")
@@ -51,11 +47,10 @@ def safe_post_json(url, headers, payload, max_retries=3, timeout=120):
         if attempt < max_retries:
             time.sleep(min(2 ** attempt, 10))
     
-    raise RuntimeError("Request failed after maximum retries")
+    raise RuntimeError("Request failed after max retries")
 
 
 def parse_judge_response(raw_text):
-    """Parse API response for judgment result"""
     if raw_text is None:
         return {"answer": "error", "explanation": "Empty response"}
     
@@ -102,7 +97,7 @@ def parse_judge_response(raw_text):
 
 # ==================== File Operations ====================
 def save_result(data, output_path):
-    """Thread-safe save (caller must have lock)"""
+    """Thread-safe save (caller must already hold lock)"""
     abs_path = os.path.abspath(output_path)
     temp_path = f"{output_path}.tmp"
     
@@ -117,7 +112,7 @@ def save_result(data, output_path):
             json.dump(data, f, ensure_ascii=False, indent=2)
         
         temp_size = os.path.getsize(temp_path)
-        safe_print(f"💾 Temporary file: {temp_size} bytes")
+        safe_print(f"💾 Temp file: {temp_size} bytes")
         
         # Atomic replace
         if os.path.exists(output_path):
@@ -172,7 +167,7 @@ def save_progress(completed_objects, progress_file):
 
 
 def load_clean_data(structured_path):
-    """Load raw data and clean old results"""
+    """Load raw data and clear old results"""
     with open(structured_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
@@ -211,21 +206,11 @@ def restore_from_output(checklist_data, output_path, completed_objects):
         safe_print(f"♻️  Restored {len(completed_objects)} objects, {restored_count} questions")
         
     except Exception as e:
-        safe_print(f"⚠️  Restoration failed: {e}")
-
-
-def load_prompt_template(prompt_path):
-    """Load prompt template from file"""
-    try:
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            return f.read().strip()
-    except Exception as e:
-        safe_print(f"❌ Failed to load prompt template: {e}")
-        raise
+        safe_print(f"⚠️  Restore failed: {e}")
 
 
 # ==================== Core Processing Logic ====================
-def process_question(question_text, model_description, section, headers, prompt_template, api_url, model_name):
+def process_question(question_text, model_description, section, headers, prompt_template):
     """Process a single question"""
     full_prompt = prompt_template.format(
         description=model_description,
@@ -233,7 +218,7 @@ def process_question(question_text, model_description, section, headers, prompt_
     )
     
     payload = {
-        "model": model_name,
+        "model": MODEL_NAME,
         "messages": [
             {
                 "role": "system",
@@ -247,7 +232,7 @@ def process_question(question_text, model_description, section, headers, prompt_
     }
     
     try:
-        response = safe_post_json(api_url, headers, payload)
+        response = safe_post_json(MODEL_URL, headers, payload)
         result = response.json()
         message_text = result["choices"][0]["message"]["content"]
         parsed = parse_judge_response(message_text)
@@ -263,12 +248,12 @@ def process_question(question_text, model_description, section, headers, prompt_
         }
 
 
-def process_object(item_index, item, response_dict, headers, prompt_template, semaphore, api_url, model_name):
+def process_object(item_index, item, response_dict, headers, prompt_template, semaphore):
     """Process all questions for one object"""
     key = (item["video1_path"], item["video2_path"])
     
     if key not in response_dict:
-        safe_print(f"⚠️  [Object {item_index}] No matching description")
+        safe_print(f"⚠️  [Object{item_index}] No matching description")
         model_description = ""
         has_description = False
     else:
@@ -278,7 +263,7 @@ def process_object(item_index, item, response_dict, headers, prompt_template, se
     video_pair = f"{os.path.basename(item['video1_path'])} vs {os.path.basename(item['video2_path'])}"
     total_questions = sum(len(item["structured_analysis"].get(s, [])) for s in ["Similarities", "Differences"])
     
-    safe_print(f"🔹 [Object {item_index}] Starting: {video_pair} ({total_questions} questions)")
+    safe_print(f"🔹 [Object{item_index}] Starting: {video_pair} ({total_questions} questions)")
     
     completed_questions = 0
     
@@ -298,20 +283,18 @@ def process_object(item_index, item, response_dict, headers, prompt_template, se
                         model_description,
                         section,
                         headers,
-                        prompt_template,
-                        api_url,
-                        model_name
+                        prompt_template
                     )
             
             question.update(result)
             completed_questions += 1
     
-    safe_print(f"✅ [Object {item_index}] Completed: {video_pair} ({completed_questions}/{total_questions})")
+    safe_print(f"✅ [Object{item_index}] Completed: {video_pair} ({completed_questions}/{total_questions})")
     return True
 
 
 def worker_thread(task_queue, checklist_data, response_dict, headers, prompt_template,
-                  output_path, progress_file, completed_objects, semaphore, api_url, model_name):
+                  output_path, progress_file, completed_objects, semaphore):
     """Worker thread"""
     thread_name = threading.current_thread().name
     
@@ -330,10 +313,10 @@ def worker_thread(task_queue, checklist_data, response_dict, headers, prompt_tem
             item = checklist_data[item_index]
             
             # Process object
-            process_object(item_index, item, response_dict, headers, prompt_template, semaphore, api_url, model_name)
+            process_object(item_index, item, response_dict, headers, prompt_template, semaphore)
             
             # Save immediately
-            safe_print(f"💾 [{thread_name}] [Object {item_index}] Preparing to save")
+            safe_print(f"💾 [{thread_name}] [Object{item_index}] Preparing to save")
             
             with file_lock:
                 completed_objects.add(item_index)
@@ -342,11 +325,11 @@ def worker_thread(task_queue, checklist_data, response_dict, headers, prompt_tem
                     save_progress(completed_objects, progress_file)
                     safe_print(f"📊 Progress: {len(completed_objects)}/{len(checklist_data)}")
                 else:
-                    safe_print(f"❌ [{thread_name}] [Object {item_index}] Save failed")
+                    safe_print(f"❌ [{thread_name}] [Object{item_index}] Save failed")
                     completed_objects.discard(item_index)
             
         except Exception as e:
-            safe_print(f"❌ [{thread_name}] [Object {item_index}] Exception: {e}")
+            safe_print(f"❌ [{thread_name}] [Object{item_index}] Exception: {e}")
             traceback.print_exc()
             
             # Mark as error and save
@@ -376,16 +359,13 @@ def judge_checklist_multithreaded(
     structured_path,
     response_path,
     output_path,
-    api_url,
-    api_key,
-    model_name=MODEL_NAME,
-    num_threads=4,
+    num_threads=13,
     max_concurrent_requests=10
 ):
-    """Multi-threaded judgment main function"""
+    """Multithreaded judgment main function"""
     
     safe_print("=" * 60)
-    safe_print("🚀 Starting multi-threaded judgment task")
+    safe_print("🚀 Starting multithreaded judgment task")
     safe_print("=" * 60)
     
     progress_file = f"{output_path}.progress"
@@ -432,7 +412,7 @@ def judge_checklist_multithreaded(
     
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
+        "Authorization": f"Bearer {API_KEY}"
     }
     
     # Create task queue
@@ -466,7 +446,7 @@ def judge_checklist_multithreaded(
         t = Thread(
             target=worker_thread,
             args=(task_queue, checklist_data, response_dict, headers, prompt_template,
-                  output_path, progress_file, completed_objects, semaphore, api_url, model_name),
+                  output_path, progress_file, completed_objects, semaphore),
             name=f"Worker-{i+1}"
         )
         t.daemon = False
@@ -480,7 +460,7 @@ def judge_checklist_multithreaded(
     task_queue.join()
     safe_print("✅ All tasks completed")
     
-    # Send stop signals
+    # Send stop signal
     safe_print("🛑 Sending stop signals...")
     for _ in range(num_threads):
         task_queue.put(None)
@@ -501,7 +481,7 @@ def judge_checklist_multithreaded(
     safe_print("=" * 60)
     safe_print("🎉 Task completed")
     safe_print(f"   Processed objects: {len(completed_objects)}")
-    safe_print(f"   Total time: {elapsed_time:.1f} seconds")
+    safe_print(f"   Total time: {elapsed_time:.1f}s")
     safe_print(f"   Output file: {os.path.abspath(output_path)}")
     
     # Verify file
@@ -524,36 +504,32 @@ def judge_checklist_multithreaded(
 
 # ==================== Entry Point ====================
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Multi-threaded video comparison judgment")
-    parser.add_argument("--prompt", required=True, help="Path to prompt template file")
-    parser.add_argument("--structured", required=True, help="Path to structured checklist JSON")
-    parser.add_argument("--response", required=True, help="Path to model response JSON")
-    parser.add_argument("--output", required=True, help="Path to output JSON")
-    parser.add_argument("--api-url", required=True, help="API endpoint URL")
-    parser.add_argument("--api-key", required=True, help="API key")
-    parser.add_argument("--model", default=MODEL_NAME, help="Model name")
-    parser.add_argument("--threads", type=int, default=4, help="Number of threads")
-    parser.add_argument("--concurrent", type=int, default=15, help="Max concurrent requests")
-    
-    args = parser.parse_args()
-    
+    PROMPT_TEMPLATE = (
+        "Based on the description generated by the model, determine whether the answer to the following question should be \"yes\" or \"no\", and provide a brief reason.\n"
+        "**Judgment Principles**:\n"
+        "1. **Default to Same**: Unless the description explicitly states that there is a difference, you must default to considering it as the same, and answer the question based on this assumption.\n"
+        "2. **Validating Differences**: To conclude that something is different, rely on explicit content or reasonable logical inference. Strictly avoid over-interpretation.\n"
+        "3. **Handling Generalizations**: If the question uses broad or general adjectives (e.g., \"general\", \"overall\"), focus on the holistic content and main idea rather than specific details or minor discrepancies.\n"
+        "Output format is a JSON object: {{\"answer\": \"yes/no\", \"explanation\": \"reason\"}}\n\n"
+        "【Model Description】\n{description}\n\n"
+        "【Question】\n{question}\n"
+    )
+
+    STRUCTURED_JSON = "checklist.json"
+    MODEL_RESPONSE_JSON = "model_responses.json"
+    OUTPUT_JSON = "judgment_results.json"
+
     try:
-        # Load prompt template
-        prompt_template = load_prompt_template(args.prompt)
-        
         judge_checklist_multithreaded(
-            prompt_template,
-            args.structured,
-            args.response,
-            args.output,
-            args.api_url,
-            args.api_key,
-            args.model,
-            args.threads,
-            args.concurrent
+            PROMPT_TEMPLATE,
+            STRUCTURED_JSON,
+            MODEL_RESPONSE_JSON,
+            OUTPUT_JSON,
+            num_threads=5,
+            max_concurrent_requests=5
         )
     except KeyboardInterrupt:
         safe_print("\n⚠️  User interrupted")
     except Exception as e:
-        safe_print(f"\n❌ Exception exit: {e}")
+        safe_print(f"\n❌ Abnormal exit: {e}")
         traceback.print_exc()
