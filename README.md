@@ -88,9 +88,6 @@ ViDiC/
 ## 📊 Benchmark Results
 ### Overall Model Performance
 
-## 📊 Benchmark Results
-### Overall Model Performance
-
 | Model | Param. | Avg. | Diff. | Sim. | Subject | Motion | Pos. | Backgr. | Cam. | Style | Tech. |
 | :--- | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | **Human** 🧠 | - | 94.46 | 92.99 | 98.57 | 96.36 | 94.36 | 90.14 | 96.70 | 92.90 | 82.31 | 97.18 |
